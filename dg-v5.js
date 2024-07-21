@@ -120,7 +120,7 @@
 
   // Function to call Hugging Face API
   async function callHuggingFaceAPI(transcript) {
-    const hfToken = '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';
+    const hfToken = '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';
 
     try {
       // Summarization
