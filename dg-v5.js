@@ -16,9 +16,17 @@
   var stopButton = document.createElement('button');
   stopButton.id = 'stopButton';
   stopButton.innerText = 'Stop Recording';
-  stopButton.style = 'padding: 5px 10px; background-color: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;';
+  stopButton.style = 'margin-right: 5px; padding: 5px 10px; background-color: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;';
   stopButton.disabled = true;
   controlsDiv.appendChild(stopButton);
+
+  // Create and style the secret key input box
+  var secretKeyInput = document.createElement('input');
+  secretKeyInput.type = 'text';
+  secretKeyInput.id = 'secretKey';
+  secretKeyInput.placeholder = 'Enter OpenAI API Key';
+  secretKeyInput.style = 'margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;';
+  controlsDiv.appendChild(secretKeyInput);
 
   // Create and style the status div
   var statusDiv = document.createElement('div');
@@ -60,6 +68,7 @@
         mediaRecorder.start(1000);
         startButton.disabled = true;
         stopButton.disabled = false;
+        secretKeyInput.disabled = true;
       };
 
       socket.onmessage = (message) => {
@@ -109,42 +118,61 @@
     }
     startButton.disabled = false;
     stopButton.disabled = true;
+    secretKeyInput.disabled = false;
     statusDiv.textContent = 'Status: Not Connected';
 
-    // Call Hugging Face API to get summarization
-    const analysisResults = await callHuggingFaceAPI(fullTranscript);
+    // Get the secret key from the input box
+    const openAiApiKey = secretKeyInput.value;
+
+    if (!openAiApiKey) {
+      alert('Please enter the OpenAI API key');
+      return;
+    }
+
+    // Call OpenAI API to get summarization
+    const analysisResults = await callOpenAiAPI(fullTranscript, openAiApiKey);
 
     // Display results
     displayResults(analysisResults);
   }
 
-  // Function to call Hugging Face API with retry mechanism
-  async function callHuggingFaceAPI(transcript, retryCount = 3) {
-    const hfToken = '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';
+  // Function to call OpenAI API with retry mechanism
+  async function callOpenAiAPI(transcript, apiKey, retryCount = 3) {
+    const maxLength = 512; // Maximum token length for the model
+
+    // Trim the transcript if it's too long
+    if (transcript.length > maxLength) {
+      transcript = transcript.substring(0, maxLength);
+    }
 
     try {
       // Summarization
-      const summary = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', transcript, hfToken, retryCount, 'summary');
+      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/engines/davinci-codex/completions', transcript, apiKey, retryCount, 'summary');
       displayPartialResult('Summary', summary);
 
       return {
         summary
       };
     } catch (error) {
-      console.error('Error during Hugging Face API calls:', error);
-      return { error: 'Error during Hugging Face API calls: ' + error.message };
+      console.error('Error during OpenAI API calls:', error);
+      return { error: 'Error during OpenAI API calls: ' + error.message };
     }
   }
 
-  // Function to call a specific Hugging Face endpoint with retry
-  async function callHuggingFaceEndpoint(url, transcript, hfToken, retries, type) {
+  // Function to call a specific OpenAI endpoint with retry
+  async function callOpenAiEndpoint(url, transcript, apiKey, retries, type) {
     const options = {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${hfToken}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ inputs: transcript })
+      body: JSON.stringify({
+        prompt: transcript,
+        max_tokens: 60,
+        n: 1,
+        stop: ['\n']
+      })
     };
 
     for (let i = 0; i < retries; i++) {
@@ -152,10 +180,7 @@
         const response = await fetch(url, options);
         const data = await response.json();
         if (response.ok) {
-          return data[0].summary_text;
-        } else if (data.error && data.estimated_time) {
-          console.log(`Model is loading, retrying in ${data.estimated_time} seconds...`);
-          await new Promise(res => setTimeout(res, data.estimated_time * 1000));
+          return data.choices[0].text.trim();
         } else {
           console.error('Fetch failed:', data);
           throw new Error('Fetch failed');
