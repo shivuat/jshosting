@@ -20,6 +20,14 @@
   stopButton.disabled = true;
   controlsDiv.appendChild(stopButton);
 
+  // Create and style the secret key input box
+  var secretKeyInput = document.createElement('input');
+  secretKeyInput.type = 'text';
+  secretKeyInput.id = 'secretKey';
+  secretKeyInput.placeholder = 'Enter OpenAI API Key';
+  secretKeyInput.style = 'margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;';
+  controlsDiv.appendChild(secretKeyInput);
+
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
@@ -142,7 +150,7 @@
 
   // Function to call OpenAI API with retry mechanism
   async function callOpenAiAPI(transcript, apiKey, retryCount = 3) {
-    const maxLength = 512; // Maximum token length for the model
+    const maxLength = 4096; // Maximum token length for the model
 
     // Trim the transcript if it's too long
     if (transcript.length > maxLength) {
@@ -151,7 +159,7 @@
 
     try {
       // Summarization
-      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/engines/text-davinci-003/completions', transcript, apiKey, retryCount, 'summary');
+      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, retryCount, 'summary');
       displayPartialResult('Summary', summary);
 
       return {
@@ -172,7 +180,11 @@
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt: `Summarize the following conversation: \n\n${transcript}\n\nSummary:`,
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: `Summarize the following conversation:\n\n${transcript}\n\nSummary:` }
+        ],
         max_tokens: 150,
         n: 1,
         stop: ['\n']
@@ -184,7 +196,7 @@
         const response = await fetch(url, options);
         const data = await response.json();
         if (response.ok) {
-          return data.choices[0].text.trim();
+          return data.choices[0].message.content.trim();
         } else {
           console.error('Fetch failed:', data);
           throw new Error('Fetch failed');
