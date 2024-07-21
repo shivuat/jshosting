@@ -111,7 +111,7 @@
     stopButton.disabled = true;
     statusDiv.textContent = 'Status: Not Connected';
 
-    // Call Hugging Face API to get summarization, intent, and sentiment
+    // Call Hugging Face API to get summarization
     const analysisResults = await callHuggingFaceAPI(fullTranscript);
 
     // Display results
@@ -127,18 +127,8 @@
       const summary = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', transcript, hfToken, retryCount, 'summary');
       displayPartialResult('Summary', summary);
 
-      // Sentiment Analysis with Retry
-      const sentiment = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/nateraw/bert-base-uncased-emotion', transcript, hfToken, retryCount, 'sentiment');
-      displayPartialResult('Sentiment', sentiment);
-
-      // Intent Detection
-      const intent = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', transcript, hfToken, retryCount, 'intent');
-      displayPartialResult('Intent', intent);
-
       return {
-        summary,
-        sentiment,
-        intent
+        summary
       };
     } catch (error) {
       console.error('Error during Hugging Face API calls:', error);
@@ -162,7 +152,7 @@
         const response = await fetch(url, options);
         const data = await response.json();
         if (response.ok) {
-          return type === 'summary' ? data[0].summary_text : type === 'sentiment' ? data[0].label : data.labels[0];
+          return type === 'summary' ? data[0].summary_text : data.labels[0];
         } else if (data.error && data.estimated_time) {
           console.log(`Model is loading, retrying in ${data.estimated_time} seconds...`);
           await new Promise(res => setTimeout(res, data.estimated_time * 1000));
@@ -212,14 +202,6 @@
       const summaryContent = document.createElement('p');
       summaryContent.textContent = `Summary: ${analysis.summary}`;
       resultsBox.appendChild(summaryContent);
-
-      const sentimentContent = document.createElement('p');
-      sentimentContent.textContent = `Sentiment: ${analysis.sentiment.label}, Score: ${analysis.sentiment.score}`;
-      resultsBox.appendChild(sentimentContent);
-
-      const intentContent = document.createElement('p');
-      intentContent.textContent = `Intent: ${analysis.intent}`;
-      resultsBox.appendChild(intentContent);
     }
 
     resultsDiv.appendChild(resultsBox);
