@@ -30,7 +30,7 @@
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 400px; width: 500px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
+  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 1400px; width: 1500px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
   controlsDiv.appendChild(transcriptDiv);
 
   // JavaScript for handling recording and WebSocket connection
