@@ -20,14 +20,6 @@
   stopButton.disabled = true;
   controlsDiv.appendChild(stopButton);
 
-  // Create and style the secret key input box
-  var secretKeyInput = document.createElement('input');
-  secretKeyInput.type = 'text';
-  secretKeyInput.id = 'secretKey';
-  secretKeyInput.placeholder = 'Enter OpenAI API Key';
-  secretKeyInput.style = 'margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;';
-  controlsDiv.appendChild(secretKeyInput);
-
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
@@ -68,7 +60,6 @@
         mediaRecorder.start(1000);
         startButton.disabled = true;
         stopButton.disabled = false;
-        secretKeyInput.disabled = true;
       };
 
       socket.onmessage = (message) => {
@@ -108,7 +99,7 @@
     });
   }
 
-  async function stopRecording() {
+  function stopRecording() {
     if (mediaRecorder) {
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
@@ -118,22 +109,35 @@
     }
     startButton.disabled = false;
     stopButton.disabled = true;
-    secretKeyInput.disabled = false;
     statusDiv.textContent = 'Status: Not Connected';
 
-    // Get the secret key from the input box
-    const openAiApiKey = secretKeyInput.value;
+    // Prompt for API key and proceed button
+    const promptDiv = document.createElement('div');
+    promptDiv.id = 'prompt';
+    promptDiv.style = 'margin-top: 10px; padding: 5px; border: 1px solid black; border-radius: 3px;';
+    promptDiv.innerHTML = `
+      <label for="apiKeyInput">Enter OpenAI API Key:</label>
+      <input type="text" id="apiKeyInput" placeholder="API Key" style="margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;">
+      <button id="proceedButton" style="margin-left: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">Proceed</button>
+    `;
+    resultsDiv.appendChild(promptDiv);
 
-    if (!openAiApiKey) {
-      alert('Please enter the OpenAI API key');
-      return;
-    }
+    document.getElementById('proceedButton').addEventListener('click', async () => {
+      const apiKey = document.getElementById('apiKeyInput').value;
+      if (!apiKey) {
+        alert('Please enter the OpenAI API key');
+        return;
+      }
 
-    // Call OpenAI API to get summarization
-    const analysisResults = await callOpenAiAPI(fullTranscript, openAiApiKey);
+      // Call OpenAI API to get summarization
+      const analysisResults = await callOpenAiAPI(fullTranscript, apiKey);
 
-    // Display results
-    displayResults(analysisResults);
+      // Display results
+      displayResults(analysisResults);
+
+      // Remove prompt
+      promptDiv.remove();
+    });
   }
 
   // Function to call OpenAI API with retry mechanism
@@ -147,7 +151,7 @@
 
     try {
       // Summarization
-      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/engines/davinci-codex/completions', transcript, apiKey, retryCount, 'summary');
+      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/engines/text-davinci-003/completions', transcript, apiKey, retryCount, 'summary');
       displayPartialResult('Summary', summary);
 
       return {
@@ -168,8 +172,8 @@
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt: transcript,
-        max_tokens: 60,
+        prompt: `Summarize the following conversation: \n\n${transcript}\n\nSummary:`,
+        max_tokens: 150,
         n: 1,
         stop: ['\n']
       })
