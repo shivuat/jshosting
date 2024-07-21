@@ -1,4 +1,4 @@
-javascript:(function() {
+(function() {
   // Create and style the controls div
   var controlsDiv = document.createElement('div');
   controlsDiv.id = 'controls';
@@ -30,18 +30,12 @@ javascript:(function() {
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 500px; max-width: 500px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
+  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 400px; width: 500px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
   controlsDiv.appendChild(transcriptDiv);
 
   // JavaScript for handling recording and WebSocket connection
   let mediaRecorder;
   let socket;
-
-  function adjustTranscriptSize() {
-    const lines = transcriptDiv.textContent.split('\n').length;
-    transcriptDiv.style.height = Math.min(50 + lines * 20, window.innerHeight - 100) + 'px';
-    transcriptDiv.style.width = '3500px'; // Fixed width for better readability
-  }
 
   function startRecording() {
     statusDiv.textContent = 'Status: Connecting...';
@@ -80,7 +74,6 @@ javascript:(function() {
             transcriptText += `${word.punctuated_word} `;
           });
           transcriptDiv.textContent += transcriptText.trim() + '\n';
-          adjustTranscriptSize();
         }
       };
 
