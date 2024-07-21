@@ -30,7 +30,7 @@ javascript:(function() {
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; max-width: 400px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
+  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 500px; max-width: 500px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
   controlsDiv.appendChild(transcriptDiv);
 
   // JavaScript for handling recording and WebSocket connection
@@ -40,7 +40,7 @@ javascript:(function() {
   function adjustTranscriptSize() {
     const lines = transcriptDiv.textContent.split('\n').length;
     transcriptDiv.style.height = Math.min(50 + lines * 20, window.innerHeight - 100) + 'px';
-    transcriptDiv.style.width = Math.min(300 + lines * 10, window.innerWidth - 100) + 'px';
+    transcriptDiv.style.width = '500px'; // Fixed width for better readability
   }
 
   function startRecording() {
@@ -68,10 +68,18 @@ javascript:(function() {
 
         if (transcript && received.is_final) {
           let transcriptText = '';
+          let currentSpeaker = null;
           words.forEach(word => {
-            transcriptText += `[Speaker ${word.speaker}] ${word.punctuated_word} `;
+            if (word.speaker !== currentSpeaker) {
+              if (currentSpeaker !== null) {
+                transcriptText += '\n';
+              }
+              currentSpeaker = word.speaker;
+              transcriptText += `[Speaker ${currentSpeaker}] `;
+            }
+            transcriptText += `${word.punctuated_word} `;
           });
-          transcriptDiv.textContent += transcriptText + '\n';
+          transcriptDiv.textContent += transcriptText.trim() + '\n';
           adjustTranscriptSize();
         }
       };
