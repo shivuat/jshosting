@@ -48,7 +48,9 @@
     statusDiv.textContent = 'Status: Connecting...';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
+      socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', {
+        headers: { Authorization: `Token bf373551459bce132cef3b1b065859ed3e4bac8f` }
+      });
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
@@ -134,11 +136,18 @@
       });
 
       if (!summarizationResponse.ok) {
-        console.error('Error from Hugging Face API (Summarization):', summarizationResponse.statusText);
-        return { error: 'Error from Hugging Face API (Summarization): ' + summarizationResponse.statusText };
+        const errorText = await summarizationResponse.text();
+        console.error('Error from Hugging Face API (Summarization):', summarizationResponse.statusText, errorText);
+        return { error: `Error from Hugging Face API (Summarization): ${summarizationResponse.statusText} ${errorText}` };
       }
 
       const summarizationData = await summarizationResponse.json();
+      console.log('Summarization response:', summarizationData);
+
+      if (!summarizationData || !summarizationData[0] || !summarizationData[0].summary_text) {
+        throw new Error('Summarization API did not return the expected response');
+      }
+
       const summary = summarizationData[0].summary_text;
 
       // Sentiment Analysis
@@ -152,11 +161,18 @@
       });
 
       if (!sentimentResponse.ok) {
-        console.error('Error from Hugging Face API (Sentiment):', sentimentResponse.statusText);
-        return { error: 'Error from Hugging Face API (Sentiment): ' + sentimentResponse.statusText };
+        const errorText = await sentimentResponse.text();
+        console.error('Error from Hugging Face API (Sentiment):', sentimentResponse.statusText, errorText);
+        return { error: `Error from Hugging Face API (Sentiment): ${sentimentResponse.statusText} ${errorText}` };
       }
 
       const sentimentData = await sentimentResponse.json();
+      console.log('Sentiment analysis response:', sentimentData);
+
+      if (!sentimentData || !sentimentData[0] || !sentimentData[0].label) {
+        throw new Error('Sentiment analysis API did not return the expected response');
+      }
+
       const sentiment = sentimentData[0];
 
       // Intent Detection
@@ -175,11 +191,18 @@
       });
 
       if (!intentResponse.ok) {
-        console.error('Error from Hugging Face API (Intent):', intentResponse.statusText);
-        return { error: 'Error from Hugging Face API (Intent): ' + intentResponse.statusText };
+        const errorText = await intentResponse.text();
+        console.error('Error from Hugging Face API (Intent):', intentResponse.statusText, errorText);
+        return { error: `Error from Hugging Face API (Intent): ${intentResponse.statusText} ${errorText}` };
       }
 
       const intentData = await intentResponse.json();
+      console.log('Intent detection response:', intentData);
+
+      if (!intentData || !intentData.labels || !intentData.labels[0]) {
+        throw new Error('Intent detection API did not return the expected response');
+      }
+
       const intent = intentData.labels[0];
 
       return {
