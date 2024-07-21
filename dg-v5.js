@@ -152,7 +152,7 @@
         const response = await fetch(url, options);
         const data = await response.json();
         if (response.ok) {
-          return type === 'summary' ? data[0].summary_text : data.labels[0];
+          return data[0].summary_text;
         } else if (data.error && data.estimated_time) {
           console.log(`Model is loading, retrying in ${data.estimated_time} seconds...`);
           await new Promise(res => setTimeout(res, data.estimated_time * 1000));
