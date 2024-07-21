@@ -40,7 +40,7 @@ javascript:(function() {
   function adjustTranscriptSize() {
     const lines = transcriptDiv.textContent.split('\n').length;
     transcriptDiv.style.height = Math.min(50 + lines * 20, window.innerHeight - 100) + 'px';
-    transcriptDiv.style.width = '500px'; // Fixed width for better readability
+    transcriptDiv.style.width = '3500px'; // Fixed width for better readability
   }
 
   function startRecording() {
