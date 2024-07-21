@@ -1,4 +1,4 @@
-(function() {
+(async function() {
   // Create and style the controls div
   var controlsDiv = document.createElement('div');
   controlsDiv.id = 'controls';
@@ -112,65 +112,85 @@
     statusDiv.textContent = 'Status: Not Connected';
 
     // Call Hugging Face API to get summarization, intent, and sentiment
-    const openAIResponse = await callHuggingFaceAPI(fullTranscript);
+    const analysisResults = await callHuggingFaceAPI(fullTranscript);
 
     // Display results
-    displayResults(openAIResponse);
+    displayResults(analysisResults);
   }
 
   // Function to call Hugging Face API
   async function callHuggingFaceAPI(transcript) {
     const hfToken = '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';
 
-    // Summarization
-    const summarizationResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${hfToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ inputs: transcript })
-    });
+    try {
+      // Summarization
+      const summarizationResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${hfToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ inputs: transcript })
+      });
 
-    const summarizationData = await summarizationResponse.json();
-    const summary = summarizationData[0].summary_text;
+      if (!summarizationResponse.ok) {
+        console.error('Error from Hugging Face API (Summarization):', summarizationResponse.statusText);
+        return { error: 'Error from Hugging Face API (Summarization): ' + summarizationResponse.statusText };
+      }
 
-    // Sentiment Analysis
-    const sentimentResponse = await fetch('https://api-inference.huggingface.co/models/nateraw/bert-base-uncased-emotion', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${hfToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ inputs: transcript })
-    });
+      const summarizationData = await summarizationResponse.json();
+      const summary = summarizationData[0].summary_text;
 
-    const sentimentData = await sentimentResponse.json();
-    const sentiment = sentimentData[0];
+      // Sentiment Analysis
+      const sentimentResponse = await fetch('https://api-inference.huggingface.co/models/nateraw/bert-base-uncased-emotion', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${hfToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ inputs: transcript })
+      });
 
-    // Intent Detection
-    const intentResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${hfToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: transcript,
-        parameters: {
-          candidate_labels: ["account support", "technical assistance", "general inquiry"]
-        }
-      })
-    });
+      if (!sentimentResponse.ok) {
+        console.error('Error from Hugging Face API (Sentiment):', sentimentResponse.statusText);
+        return { error: 'Error from Hugging Face API (Sentiment): ' + sentimentResponse.statusText };
+      }
 
-    const intentData = await intentResponse.json();
-    const intent = intentData.labels[0];
+      const sentimentData = await sentimentResponse.json();
+      const sentiment = sentimentData[0];
 
-    return {
-      summary,
-      sentiment,
-      intent
-    };
+      // Intent Detection
+      const intentResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${hfToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: transcript,
+          parameters: {
+            candidate_labels: ["account support", "technical assistance", "general inquiry"]
+          }
+        })
+      });
+
+      if (!intentResponse.ok) {
+        console.error('Error from Hugging Face API (Intent):', intentResponse.statusText);
+        return { error: 'Error from Hugging Face API (Intent): ' + intentResponse.statusText };
+      }
+
+      const intentData = await intentResponse.json();
+      const intent = intentData.labels[0];
+
+      return {
+        summary,
+        sentiment,
+        intent
+      };
+    } catch (error) {
+      console.error('Error during Hugging Face API calls:', error);
+      return { error: 'Error during Hugging Face API calls: ' + error.message };
+    }
   }
 
   // Function to display results
@@ -182,17 +202,23 @@
     resultsTitle.textContent = 'Analysis Results:';
     resultsBox.appendChild(resultsTitle);
 
-    const summaryContent = document.createElement('p');
-    summaryContent.textContent = `Summary: ${analysis.summary}`;
-    resultsBox.appendChild(summaryContent);
+    if (analysis.error) {
+      const errorContent = document.createElement('p');
+      errorContent.textContent = `Error: ${analysis.error}`;
+      resultsBox.appendChild(errorContent);
+    } else {
+      const summaryContent = document.createElement('p');
+      summaryContent.textContent = `Summary: ${analysis.summary}`;
+      resultsBox.appendChild(summaryContent);
 
-    const sentimentContent = document.createElement('p');
-    sentimentContent.textContent = `Sentiment: ${analysis.sentiment.label}, Score: ${analysis.sentiment.score}`;
-    resultsBox.appendChild(sentimentContent);
+      const sentimentContent = document.createElement('p');
+      sentimentContent.textContent = `Sentiment: ${analysis.sentiment.label}, Score: ${analysis.sentiment.score}`;
+      resultsBox.appendChild(sentimentContent);
 
-    const intentContent = document.createElement('p');
-    intentContent.textContent = `Intent: ${analysis.intent}`;
-    resultsBox.appendChild(intentContent);
+      const intentContent = document.createElement('p');
+      intentContent.textContent = `Intent: ${analysis.intent}`;
+      resultsBox.appendChild(intentContent);
+    }
 
     resultsDiv.appendChild(resultsBox);
   }
