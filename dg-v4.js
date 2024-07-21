@@ -120,7 +120,7 @@
 
   // Function to call OpenAI API
   async function callOpenAI(transcript) {
-    const openAIKey = 'YOUR_OPENAI_API_KEY';
+    const openAIKey = 'sk-proj-8o0hRxJfk1jadshebDIuT3BlbkFJDLYWDosx0cY8glHTeCPE';
     const apiUrl = 'https://api.openai.com/v1/engines/davinci-codex/completions';
     const prompt = `
     Here is a conversation transcript:
