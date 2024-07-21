@@ -1,4 +1,4 @@
-(function() {
+(async function() {
   // Create and style the controls div
   var controlsDiv = document.createElement('div');
   controlsDiv.id = 'controls';
@@ -118,90 +118,22 @@
     displayResults(analysisResults);
   }
 
-  // Function to call Hugging Face API
-  async function callHuggingFaceAPI(transcript) {
+  // Function to call Hugging Face API with retry mechanism
+  async function callHuggingFaceAPI(transcript, retryCount = 3) {
     const hfToken = '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';
 
     try {
       // Summarization
-      const summarizationResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${hfToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ inputs: transcript })
-      });
+      const summary = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', transcript, hfToken, retryCount, 'summary');
+      displayPartialResult('Summary', summary);
 
-      if (!summarizationResponse.ok) {
-        const errorText = await summarizationResponse.text();
-        console.error('Error from Hugging Face API (Summarization):', summarizationResponse.statusText, errorText);
-        return { error: `Error from Hugging Face API (Summarization): ${summarizationResponse.statusText} ${errorText}` };
-      }
-
-      const summarizationData = await summarizationResponse.json();
-      console.log('Summarization response:', summarizationData);
-
-      if (!summarizationData || !summarizationData[0] || !summarizationData[0].summary_text) {
-        throw new Error('Summarization API did not return the expected response');
-      }
-
-      const summary = summarizationData[0].summary_text;
-
-      // Sentiment Analysis
-      const sentimentResponse = await fetch('https://api-inference.huggingface.co/models/nateraw/bert-base-uncased-emotion', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${hfToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ inputs: transcript })
-      });
-
-      if (!sentimentResponse.ok) {
-        const errorText = await sentimentResponse.text();
-        console.error('Error from Hugging Face API (Sentiment):', sentimentResponse.statusText, errorText);
-        return { error: `Error from Hugging Face API (Sentiment): ${sentimentResponse.statusText} ${errorText}` };
-      }
-
-      const sentimentData = await sentimentResponse.json();
-      console.log('Sentiment analysis response:', sentimentData);
-
-      if (!sentimentData || !sentimentData[0] || !sentimentData[0].label) {
-        throw new Error('Sentiment analysis API did not return the expected response');
-      }
-
-      const sentiment = sentimentData[0];
+      // Sentiment Analysis with Retry
+      const sentiment = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/nateraw/bert-base-uncased-emotion', transcript, hfToken, retryCount, 'sentiment');
+      displayPartialResult('Sentiment', sentiment);
 
       // Intent Detection
-      const intentResponse = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${hfToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          inputs: transcript,
-          parameters: {
-            candidate_labels: ["account support", "technical assistance", "general inquiry"]
-          }
-        })
-      });
-
-      if (!intentResponse.ok) {
-        const errorText = await intentResponse.text();
-        console.error('Error from Hugging Face API (Intent):', intentResponse.statusText, errorText);
-        return { error: `Error from Hugging Face API (Intent): ${intentResponse.statusText} ${errorText}` };
-      }
-
-      const intentData = await intentResponse.json();
-      console.log('Intent detection response:', intentData);
-
-      if (!intentData || !intentData.labels || !intentData.labels[0]) {
-        throw new Error('Intent detection API did not return the expected response');
-      }
-
-      const intent = intentData.labels[0];
+      const intent = await callHuggingFaceEndpoint('https://api-inference.huggingface.co/models/facebook/bart-large-mnli', transcript, hfToken, retryCount, 'intent');
+      displayPartialResult('Intent', intent);
 
       return {
         summary,
@@ -212,6 +144,55 @@
       console.error('Error during Hugging Face API calls:', error);
       return { error: 'Error during Hugging Face API calls: ' + error.message };
     }
+  }
+
+  // Function to call a specific Hugging Face endpoint with retry
+  async function callHuggingFaceEndpoint(url, transcript, hfToken, retries, type) {
+    const options = {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hfToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ inputs: transcript })
+    };
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+        if (response.ok) {
+          return type === 'summary' ? data[0].summary_text : type === 'sentiment' ? data[0].label : data.labels[0];
+        } else if (data.error && data.estimated_time) {
+          console.log(`Model is loading, retrying in ${data.estimated_time} seconds...`);
+          await new Promise(res => setTimeout(res, data.estimated_time * 1000));
+        } else {
+          console.error('Fetch failed:', data);
+          throw new Error('Fetch failed');
+        }
+      } catch (error) {
+        if (i === retries - 1) {
+          console.error('Maximum retries reached:', error);
+          throw error;
+        }
+        console.log(`Retrying (${i + 1}/${retries})...`);
+        await new Promise(res => setTimeout(res, 2000));
+      }
+    }
+  }
+
+  // Function to display partial results
+  function displayPartialResult(title, result) {
+    const resultBox = document.createElement('div');
+    resultBox.style = 'border: 1px solid black; padding: 5px; margin-top: 5px;';
+    const resultTitle = document.createElement('h4');
+    resultTitle.textContent = title;
+    const resultContent = document.createElement('p');
+    resultContent.textContent = result;
+
+    resultBox.appendChild(resultTitle);
+    resultBox.appendChild(resultContent);
+    resultsDiv.appendChild(resultBox);
   }
 
   // Function to display results
