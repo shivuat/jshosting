@@ -41,7 +41,7 @@
     statusDiv.textContent = 'Status: Connecting...';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
+      socket = new WebSocket('wss://api.deepgram.com/v1/listen?summarize=v2&diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
