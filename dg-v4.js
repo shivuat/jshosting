@@ -121,7 +121,7 @@
   // Function to call OpenAI API
   async function callOpenAI(transcript) {
     const openAIKey = 'sk-proj-8o0hRxJfk1jadshebDIuT3BlbkFJDLYWDosx0cY8glHTeCPE';
-    const apiUrl = 'https://api.openai.com/v1/engines/davinci-codex/completions';
+    const apiUrl = 'https://api.openai.com/v1/engines/davinci/completions';
     const prompt = `
     Here is a conversation transcript:
     ${transcript}
@@ -142,7 +142,18 @@
       })
     });
 
+    if (!response.ok) {
+      console.error('Error from OpenAI API:', response.statusText);
+      return 'Error: Unable to fetch data from OpenAI API.';
+    }
+
     const data = await response.json();
+    console.log('OpenAI API response:', data);
+
+    if (!data.choices || data.choices.length === 0) {
+      return 'Error: No choices returned from OpenAI API.';
+    }
+
     return data.choices[0].text.trim();
   }
 
