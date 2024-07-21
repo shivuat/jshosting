@@ -1,18 +1,18 @@
 javascript:(function() {
-  // Create and style the controls div
+  
   var controlsDiv = document.createElement('div');
   controlsDiv.id = 'controls';
   controlsDiv.style = 'position: fixed; top: 10px; right: 10px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px;';
   document.body.appendChild(controlsDiv);
 
-  // Create and style the start button
+
   var startButton = document.createElement('button');
   startButton.id = 'startButton';
   startButton.innerText = 'Start Recording';
   startButton.style = 'margin-right: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;';
   controlsDiv.appendChild(startButton);
 
-  // Create and style the stop button
+ 
   var stopButton = document.createElement('button');
   stopButton.id = 'stopButton';
   stopButton.innerText = 'Stop Recording';
@@ -20,20 +20,20 @@ javascript:(function() {
   stopButton.disabled = true;
   controlsDiv.appendChild(stopButton);
 
-  // Create and style the status div
+ 
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
   statusDiv.innerText = 'Status: Not Connected';
   statusDiv.style = 'margin-top: 10px; padding: 5px; background-color: lightgray;';
   controlsDiv.appendChild(statusDiv);
 
-  // Create and style the transcript div
+  
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
   transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; max-width: 400px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
   controlsDiv.appendChild(transcriptDiv);
 
-  // JavaScript for handling recording and WebSocket connection
+  
   let mediaRecorder;
   let socket;
 
@@ -97,7 +97,7 @@ javascript:(function() {
     statusDiv.textContent = 'Status: Not Connected';
   }
 
-  // Add event listeners to the buttons
+ 
   startButton.addEventListener('click', startRecording);
   stopButton.addEventListener('click', stopRecording);
 })();
