@@ -210,12 +210,12 @@
     } else {
       const summaryContent = document.createElement('p');
       summaryContent.textContent = `Summary: ${analysis.summary}`;
-      summaryContent.style = 'background-color: #e0f7fa; padding: 5px; border-radius: 5px;';
+      summaryContent.className = 'summary';
       resultsBox.appendChild(summaryContent);
 
       const intentContent = document.createElement('p');
       intentContent.textContent = `Intent: ${analysis.intent}`;
-      intentContent.style = 'background-color: #fff3e0; padding: 5px; border-radius: 5px;';
+      intentContent.className = 'intent';
       resultsBox.appendChild(intentContent);
     }
 
@@ -225,4 +225,20 @@
   // Add event listeners to the buttons
   startButton.addEventListener('click', startRecording);
   stopButton.addEventListener('click', stopRecording);
+
+  // Adding styles for summary and intent
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .summary {
+      background-color: #e0f7fa;
+      padding: 5px;
+      border-radius: 5px;
+    }
+    .intent {
+      background-color: #fff3e0;
+      padding: 5px;
+      border-radius: 5px;
+    }
+  `;
+  document.head.appendChild(style);
 })();
