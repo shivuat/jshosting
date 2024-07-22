@@ -12,7 +12,7 @@
   function init() {
     const awsAccessKeyId = prompt('Enter your AWS Access Key ID:');
     const awsSecretAccessKey = prompt('Enter your AWS Secret Access Key:');
-    const awsRegion = 'YOUR_AWS_REGION'; // Replace with your AWS region
+    const awsRegion = 'us-east-1'; // Replace with your AWS region
 
     // Initialize AWS SDK
     AWS.config.update({
