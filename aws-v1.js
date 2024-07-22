@@ -3,8 +3,8 @@
   if (typeof AWS === 'undefined') {
     var script = document.createElement('script');
     script.src = 'https://sdk.amazonaws.com/js/aws-sdk-2.988.0.min.js';
-    document.head.appendChild(script);
     script.onload = init;
+    document.head.appendChild(script);
   } else {
     init();
   }
