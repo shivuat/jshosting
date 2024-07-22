@@ -148,8 +148,8 @@
     });
   }
 
-  // Function to call OpenAI API with retry mechanism
-  async function callOpenAiAPI(transcript, apiKey, retryCount = 3) {
+  // Function to call OpenAI API
+  async function callOpenAiAPI(transcript, apiKey) {
     const maxLength = 4096; // Maximum token length for the model
 
     // Trim the transcript if it's too long
@@ -159,7 +159,7 @@
 
     try {
       // Summarization
-      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, retryCount, 'summary');
+      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'summary');
       displayPartialResult('Summary', summary);
 
       return {
@@ -171,8 +171,8 @@
     }
   }
 
-  // Function to call a specific OpenAI endpoint with retry
-  async function callOpenAiEndpoint(url, transcript, apiKey, retries, type) {
+  // Function to call a specific OpenAI endpoint
+  async function callOpenAiEndpoint(url, transcript, apiKey, type) {
     const options = {
       method: 'POST',
       headers: {
@@ -191,25 +191,13 @@
       })
     };
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(url, options);
-        const data = await response.json();
-        if (response.ok) {
-          return data.choices[0].message.content.trim();
-        } else {
-          console.error('Fetch failed:', data);
-          throw new Error('Fetch failed');
-        }
-      } catch (error) {
-        if (i === retries - 1) {
-          console.error('Maximum retries reached:', error);
-          throw error;
-        }
-        console.log(`Retrying (${i + 1}/${retries})...`);
-        await new Promise(res => setTimeout(res, 2000));
-      }
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Fetch failed:', data);
+      throw new Error('Fetch failed');
     }
+    return data.choices[0].message.content.trim();
   }
 
   // Function to display partial results
