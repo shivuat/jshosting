@@ -210,10 +210,12 @@
     } else {
       const summaryContent = document.createElement('p');
       summaryContent.textContent = `Summary: ${analysis.summary}`;
+      summaryContent.style = 'background-color: #e0f7fa; padding: 5px; border-radius: 5px;';
       resultsBox.appendChild(summaryContent);
 
       const intentContent = document.createElement('p');
       intentContent.textContent = `Intent: ${analysis.intent}`;
+      intentContent.style = 'background-color: #fff3e0; padding: 5px; border-radius: 5px;';
       resultsBox.appendChild(intentContent);
     }
 
