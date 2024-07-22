@@ -21,7 +21,7 @@
       region: awsRegion
     });
 
-    const transcribeClient = new AWS.TranscribeStreamingClient();
+    const transcribeClient = new AWS.TranscribeService();
 
     const controlsDiv = document.createElement('div');
     controlsDiv.id = 'controls';
