@@ -58,7 +58,6 @@
     controlsDiv.appendChild(resultsDiv);
 
     let mediaRecorder;
-    let transcribeStream;
     let fullTranscript = '';
 
     async function startRecording() {
@@ -66,41 +65,41 @@
       navigator.mediaDevices.getUserMedia({ audio: true }).then(async (stream) => {
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-        const mediaStream = new ReadableStream({
-          start(controller) {
-            mediaRecorder.ondataavailable = (event) => {
-              if (event.data.size > 0) {
-                controller.enqueue(event.data);
-              }
-            };
-          },
-          cancel() {
-            mediaRecorder.stop();
-          }
-        });
+        const audioChunks = [];
+        mediaRecorder.ondataavailable = event => {
+          audioChunks.push(event.data);
+        };
 
-        transcribeStream = transcribeClient.startStreamTranscription({
-          LanguageCode: 'en-US',
-          MediaSampleRateHertz: 44100,
-          MediaEncoding: 'pcm',
-          AudioStream: mediaStream
-        });
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioBuffer = await audioBlob.arrayBuffer();
+          const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
+          const params = {
+            TranscriptionJobName: `TranscriptionJob-${Date.now()}`,
+            LanguageCode: 'en-US',
+            MediaFormat: 'webm',
+            Media: {
+              MediaFileUri: `data:audio/webm;base64,${audioBase64}`
+            }
+          };
+
+          transcribeClient.startTranscriptionJob(params, function(err, data) {
+            if (err) {
+              console.log(err, err.stack);
+              statusDiv.textContent = 'Error starting transcription job';
+            } else {
+              console.log(data);
+              statusDiv.textContent = 'Transcription job started';
+              checkTranscriptionJob(data.TranscriptionJob.TranscriptionJobName);
+            }
+          });
+        };
+
+        mediaRecorder.start();
         startButton.disabled = true;
         stopButton.disabled = false;
         statusDiv.textContent = 'Status: Connected';
-
-        for await (const event of transcribeStream) {
-          if (event.TranscriptEvent) {
-            for (const result of event.TranscriptEvent.Transcript.Results) {
-              if (!result.IsPartial) {
-                const transcript = result.Alternatives[0].Transcript;
-                fullTranscript += transcript + '\n';
-                transcriptDiv.textContent += transcript + '\n';
-              }
-            }
-          }
-        }
       }).catch(error => {
         statusDiv.textContent = 'Error accessing media devices';
         console.error('Error accessing media devices:', error);
@@ -110,35 +109,35 @@
     function stopRecording() {
       if (mediaRecorder) {
         mediaRecorder.stop();
-        mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      }
-      if (transcribeStream) {
-        transcribeStream.abort();
       }
       startButton.disabled = false;
       stopButton.disabled = true;
       statusDiv.textContent = 'Status: Not Connected';
+    }
 
-      const promptDiv = document.createElement('div');
-      promptDiv.id = 'prompt';
-      promptDiv.style = 'margin-top: 10px; padding: 5px; border: 1px solid black; border-radius: 3px;';
-      promptDiv.innerHTML = `
-        <label for="apiKeyInput">Enter OpenAI API Key:</label>
-        <input type="text" id="apiKeyInput" placeholder="API Key" style="margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;">
-        <button id="proceedButton" style="margin-left: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">Proceed</button>
-      `;
-      resultsDiv.appendChild(promptDiv);
+    function checkTranscriptionJob(jobName) {
+      const params = {
+        TranscriptionJobName: jobName
+      };
 
-      document.getElementById('proceedButton').addEventListener('click', async () => {
-        const apiKey = document.getElementById('apiKeyInput').value;
-        if (!apiKey) {
-          alert('Please enter the OpenAI API key');
-          return;
+      transcribeClient.getTranscriptionJob(params, function(err, data) {
+        if (err) {
+          console.log(err, err.stack);
+          statusDiv.textContent = 'Error checking transcription job';
+        } else {
+          console.log(data);
+          if (data.TranscriptionJob.TranscriptionJobStatus === 'COMPLETED') {
+            fetch(data.TranscriptionJob.Transcript.TranscriptFileUri)
+              .then(response => response.json())
+              .then(result => {
+                const transcript = result.results.transcripts[0].transcript;
+                fullTranscript = transcript;
+                transcriptDiv.textContent = transcript;
+              });
+          } else {
+            setTimeout(() => checkTranscriptionJob(jobName), 5000);
+          }
         }
-
-        const analysisResults = await callOpenAiAPI(fullTranscript, apiKey);
-        displayResults(analysisResults);
-        promptDiv.remove();
       });
     }
 
@@ -216,5 +215,27 @@
 
     startButton.addEventListener('click', startRecording);
     stopButton.addEventListener('click', stopRecording);
+
+    const promptDiv = document.createElement('div');
+    promptDiv.id = 'prompt';
+    promptDiv.style = 'margin-top: 10px; padding: 5px; border: 1px solid black; border-radius: 3px;';
+    promptDiv.innerHTML = `
+      <label for="apiKeyInput">Enter OpenAI API Key:</label>
+      <input type="text" id="apiKeyInput" placeholder="API Key" style="margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;">
+      <button id="proceedButton" style="margin-left: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">Proceed</button>
+    `;
+    resultsDiv.appendChild(promptDiv);
+
+    document.getElementById('proceedButton').addEventListener('click', async () => {
+      const apiKey = document.getElementById('apiKeyInput').value;
+      if (!apiKey) {
+        alert('Please enter the OpenAI API key');
+        return;
+      }
+
+      const analysisResults = await callOpenAiAPI(fullTranscript, apiKey);
+      displayResults(analysisResults);
+      promptDiv.remove();
+    });
   }
 })();
