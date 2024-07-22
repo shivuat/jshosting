@@ -20,14 +20,6 @@
   stopButton.disabled = true;
   controlsDiv.appendChild(stopButton);
 
-  // Create and style the secret key input box
-  var secretKeyInput = document.createElement('input');
-  secretKeyInput.type = 'text';
-  secretKeyInput.id = 'secretKey';
-  secretKeyInput.placeholder = 'Enter OpenAI API Key';
-  secretKeyInput.style = 'margin-left: 5px; padding: 5px; border: 1px solid black; border-radius: 3px;';
-  controlsDiv.appendChild(secretKeyInput);
-
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
