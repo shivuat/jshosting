@@ -64,6 +64,7 @@
 
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
+        console.log('Deepgram Response:', received);
         const transcript = received.channel.alternatives[0].transcript;
         const words = received.channel.alternatives[0].words;
 
