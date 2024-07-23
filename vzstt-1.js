@@ -132,11 +132,7 @@
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         console.log('Received:', received);
-        const { text, diarization } = received;
-        transcriptDiv.textContent += `${text}\n`;
-        diarization.forEach(d => {
-          transcriptDiv.textContent += `${d}\n`;
-        });
+        transcriptDiv.textContent += `${received.text}\n`;
       };
 
       socket.onclose = () => {
@@ -152,7 +148,7 @@
       console.error('Error accessing media devices:', error);
     });
   }
- 
+
   function stopRecording() {
     if (mediaRecorder) {
       mediaRecorder.stop();
