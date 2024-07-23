@@ -132,7 +132,11 @@
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         console.log('Received:', received);
-        transcriptDiv.textContent += `${received.text}\n`;
+        const { text, diarization } = received;
+        transcriptDiv.textContent += `${text}\n`;
+        diarization.forEach(d => {
+          transcriptDiv.textContent += `${d}\n`;
+        });
       };
 
       socket.onclose = () => {
