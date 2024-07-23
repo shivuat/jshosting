@@ -152,7 +152,7 @@
       console.error('Error accessing media devices:', error);
     });
   }
-
+ 
   function stopRecording() {
     if (mediaRecorder) {
       mediaRecorder.stop();
