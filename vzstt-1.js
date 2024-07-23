@@ -40,17 +40,18 @@
   function startRecording() {
     statusDiv.textContent = 'Status: Connecting...';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('ws://localhost:8000');
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0 && socket.readyState === 1) {
+            console.log('Sending audio data:', event.data);
             socket.send(event.data);
           }
         };
-        mediaRecorder.start(1000);
+        mediaRecorder.start(1000); // Send data every second
         startButton.disabled = true;
         stopButton.disabled = false;
       };
