@@ -158,3 +158,15 @@
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    if (socket) {
+      socket.close();
+    }
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    statusDiv.textContent = 'Status: Not Connected';
+  }
+
+  // Add event listeners to the buttons
+  startButton.addEventListener('click', startRecording);
+  stopButton.addEventListener('click', stopRecording);
+})();
