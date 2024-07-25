@@ -33,6 +33,12 @@
   resultDiv.style = 'margin-top: 10px; padding: 5px; background-color: #f0f0f0; border: 1px solid black; border-radius: 5px;';
   controlsDiv.appendChild(resultDiv);
 
+  // Create and style the wave simulator div
+  var waveDiv = document.createElement('div');
+  waveDiv.id = 'wave';
+  waveDiv.style = 'margin-top: 10px; height: 50px; width: 100%; background: url(data:image/gif;base64,R0lGODlhEAAQAPIAAFVVVf8AAN/f39fX1////wAAAAAAAAAAACH5BAEAAAUALAAAAAAQABAAAAJphI+py+0Po5y02ouz3rz7D4biSJbmiabqyrbuC8fyTNp2L1jef6A/PsgJGkEADs=) repeat-x;';
+  controlsDiv.appendChild(waveDiv);
+
   // JavaScript for handling recording and WebSocket connection
   let mediaRecorder;
   let socket;
