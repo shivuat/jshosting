@@ -36,9 +36,30 @@
   // Create and style the wave simulator div
   var waveDiv = document.createElement('div');
   waveDiv.id = 'wave';
-  waveDiv.style = 'margin-top: 10px; height: 50px; width: 100%; background: url(data:image/gif;base64,R0lGODlhEAAQAPIAAFVVVf8AAN/f39fX1////wAAAAAAAAAAACH5BAEAAAUALAAAAAAQABAAAAJphI+py+0Po5y02ouz3rz7D4biSJbmiabqyrbuC8fyTNp2L1jef6A/PsgJGkEADs=) repeat-x;';
-  waveDiv.style.display = 'none'; // Initially hidden
+  waveDiv.style = 'margin-top: 10px; height: 50px; width: 100%; display: none;'; // Initially hidden
   controlsDiv.appendChild(waveDiv);
+
+  // Add wave animation styles
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .wave {
+      width: 5px;
+      height: 100%;
+      background: #4CAF50;
+      display: inline-block;
+      animation: wave 1s infinite ease-in-out;
+    }
+    .wave:nth-child(1) { animation-delay: -0.4s; }
+    .wave:nth-child(2) { animation-delay: -0.3s; }
+    .wave:nth-child(3) { animation-delay: -0.2s; }
+    .wave:nth-child(4) { animation-delay: -0.1s; }
+    .wave:nth-child(5) { animation-delay: 0s; }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(2); }
+    }
+  `;
+  document.head.appendChild(style);
 
   // JavaScript for handling recording and WebSocket connection
   let mediaRecorder;
@@ -47,6 +68,11 @@
   function startRecording() {
     statusDiv.textContent = 'Status: Connecting...';
     waveDiv.style.display = 'block'; // Show wave simulator
+    for (let i = 0; i < 5; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'wave';
+      waveDiv.appendChild(bar);
+    }
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
@@ -57,6 +83,9 @@
       mediaRecorder.onstop = () => {
         console.log('MediaRecorder stopped');
         waveDiv.style.display = 'none'; // Hide wave simulator
+        while (waveDiv.firstChild) {
+          waveDiv.removeChild(waveDiv.firstChild);
+        }
       };
 
       mediaRecorder.ondataavailable = (event) => {
