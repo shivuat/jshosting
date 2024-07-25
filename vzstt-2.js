@@ -80,6 +80,7 @@
 
       socket.onclose = () => {
         statusDiv.textContent = 'Status: Disconnected';
+        console.log('Socket closed');
       };
 
       socket.onerror = (error) => {
@@ -102,6 +103,7 @@
     setTimeout(() => {
       if (socket) {
         socket.close();
+        console.log('Socket closed after 30 seconds');
       }
       startButton.disabled = false;
       stopButton.disabled = true;
@@ -128,7 +130,7 @@
     const sliceWidth = canvas.width * 1.0 / bufferLength;
     let x = 0;
 
-    for (let i = 0; bufferLength; i++) {
+    for (let i = 0; i < bufferLength; i++) {
       const v = dataArray[i] / 128.0;
       const y = v * canvas.height / 2;
 
