@@ -44,7 +44,6 @@
   // JavaScript for handling recording, WebSocket connection, and waveform visualization
   let mediaRecorder;
   let socket;
-  let fullTranscript = '';
   let audioContext;
   let analyser;
   let dataArray;
@@ -65,27 +64,16 @@
       canvasContext = canvas.getContext('2d');
 
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-      mediaRecorder.onstart = () => {
-        console.log('MediaRecorder started');
-      };
-
-      mediaRecorder.onstop = () => {
-        console.log('MediaRecorder stopped');
-      };
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-          console.log('Sending audio data:', event.data);
-          socket.send(event.data);
-        }
-      };
-
       socket = new WebSocket('ws://localhost:8000');
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
-        mediaRecorder.start(1000); // Send data every second
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && socket.readyState === 1) {
+            socket.send(event.data);
+          }
+        };
+        mediaRecorder.start(1000);
         startButton.disabled = true;
         stopButton.disabled = false;
         drawWaveform();
@@ -94,7 +82,7 @@
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         console.log('Received:', received);
-        transcriptDiv.textContent += `${received.text}\n`;
+        transcriptDiv.textContent = received.text + '\n\n' + 'Summary: ' + received.summary;
       };
 
       socket.onclose = () => {
@@ -124,6 +112,11 @@
     statusDiv.textContent = 'Status: Not Connected';
   }
 
+  // Add event listeners to the buttons
+  startButton.addEventListener('click', startRecording);
+  stopButton.addEventListener('click', stopRecording);
+
+  // Function to draw waveform
   function drawWaveform() {
     requestAnimationFrame(drawWaveform);
 
@@ -156,8 +149,4 @@
     canvasContext.lineTo(canvas.width, canvas.height / 2);
     canvasContext.stroke();
   }
-
-  // Add event listeners to the buttons
-  startButton.addEventListener('click', startRecording);
-  stopButton.addEventListener('click', stopRecording);
 })();
