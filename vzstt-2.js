@@ -27,17 +27,11 @@
   statusDiv.style = 'margin-top: 10px; padding: 5px; background-color: lightgray;';
   controlsDiv.appendChild(statusDiv);
 
-  // Create and style the transcription result div
-  var resultDiv = document.createElement('div');
-  resultDiv.id = 'result';
-  resultDiv.style = 'margin-top: 10px; padding: 5px; background-color: #f0f0f0; border: 1px solid black; border-radius: 5px;';
-  controlsDiv.appendChild(resultDiv);
-
-  // Create and style the wave simulator div
-  var waveDiv = document.createElement('div');
-  waveDiv.id = 'wave';
-  waveDiv.style = 'margin-top: 10px; height: 50px; width: 100%; background: url(data:image/gif;base64,R0lGODlhEAAQAPIAAFVVVf8AAN/f39fX1////wAAAAAAAAAAACH5BAEAAAUALAAAAAAQABAAAAJphI+py+0Po5y02ouz3rz7D4biSJbmiabqyrbuC8fyTNp2L1jef6A/PsgJGkEADs=) repeat-x;';
-  controlsDiv.appendChild(waveDiv);
+  // Create and style the transcript div
+  var transcriptDiv = document.createElement('div');
+  transcriptDiv.id = 'transcript';
+  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; height: 400px; max-height: 1400px; width: 1000px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
+  controlsDiv.appendChild(transcriptDiv);
 
   // JavaScript for handling recording and WebSocket connection
   let mediaRecorder;
@@ -51,46 +45,42 @@
 
       mediaRecorder.onstart = () => {
         console.log('MediaRecorder started');
-        statusDiv.textContent = 'Status: Recording...';
       };
 
       mediaRecorder.onstop = () => {
         console.log('MediaRecorder stopped');
-        statusDiv.textContent = 'Status: Processing...';
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        audioChunks = [];
-
-        socket = new WebSocket('ws://localhost:8000');
-
-        socket.onopen = () => {
-          socket.send(audioBlob);
-        };
-
-        socket.onmessage = (message) => {
-          const received = JSON.parse(message.data);
-          console.log('Received:', received);
-          resultDiv.textContent = `Transcription: ${received.text}`;
-        };
-
-        socket.onclose = () => {
-          statusDiv.textContent = 'Status: Disconnected';
-        };
-
-        socket.onerror = (error) => {
-          statusDiv.textContent = 'Status: Error';
-          console.error('WebSocket error:', error);
-        };
       };
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
+        if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+          console.log('Sending audio data:', event.data);
+          socket.send(event.data);
         }
       };
 
-      mediaRecorder.start();
-      startButton.disabled = true;
-      stopButton.disabled = false;
+      socket = new WebSocket('ws://localhost:8000');
+
+      socket.onopen = () => {
+        statusDiv.textContent = 'Status: Connected';
+        mediaRecorder.start(1000); // Send data every second
+        startButton.disabled = true;
+        stopButton.disabled = false;
+      };
+
+      socket.onmessage = (message) => {
+        const received = JSON.parse(message.data);
+        console.log('Received:', received);
+        transcriptDiv.textContent += `${received.text}\n`;
+      };
+
+      socket.onclose = () => {
+        statusDiv.textContent = 'Status: Disconnected';
+      };
+
+      socket.onerror = (error) => {
+        statusDiv.textContent = 'Status: Error';
+        console.error('WebSocket error:', error);
+      };
     }).catch(error => {
       statusDiv.textContent = 'Error accessing media devices';
       console.error('Error accessing media devices:', error);
@@ -102,8 +92,12 @@
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    if (socket) {
+      socket.close();
+    }
     startButton.disabled = false;
     stopButton.disabled = true;
+    statusDiv.textContent = 'Status: Not Connected';
   }
 
   // Add event listeners to the buttons
