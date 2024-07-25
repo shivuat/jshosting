@@ -43,7 +43,6 @@
   // JavaScript for handling recording and WebSocket connection
   let mediaRecorder;
   let socket;
-  let audioChunks = [];
 
   function startRecording() {
     statusDiv.textContent = 'Status: Connecting...';
@@ -53,47 +52,43 @@
 
       mediaRecorder.onstart = () => {
         console.log('MediaRecorder started');
-        statusDiv.textContent = 'Status: Recording...';
       };
 
       mediaRecorder.onstop = () => {
         console.log('MediaRecorder stopped');
-        statusDiv.textContent = 'Status: Processing...';
         waveDiv.style.display = 'none'; // Hide wave simulator
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        audioChunks = [];
-
-        socket = new WebSocket('ws://localhost:8000');
-
-        socket.onopen = () => {
-          socket.send(audioBlob);
-        };
-
-        socket.onmessage = (message) => {
-          const received = JSON.parse(message.data);
-          console.log('Received:', received);
-          transcriptDiv.textContent = `Transcription: ${received.text}`;
-        };
-
-        socket.onclose = () => {
-          statusDiv.textContent = 'Status: Disconnected';
-        };
-
-        socket.onerror = (error) => {
-          statusDiv.textContent = 'Status: Error';
-          console.error('WebSocket error:', error);
-        };
       };
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
+        if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+          console.log('Sending audio data:', event.data);
+          socket.send(event.data);
         }
       };
 
-      mediaRecorder.start();
-      startButton.disabled = true;
-      stopButton.disabled = false;
+      socket = new WebSocket('ws://localhost:8000');
+
+      socket.onopen = () => {
+        statusDiv.textContent = 'Status: Connected';
+        mediaRecorder.start(1000); // Send data every second
+        startButton.disabled = true;
+        stopButton.disabled = false;
+      };
+
+      socket.onmessage = (message) => {
+        const received = JSON.parse(message.data);
+        console.log('Received:', received);
+        transcriptDiv.textContent += `${received.text}\n`;
+      };
+
+      socket.onclose = () => {
+        statusDiv.textContent = 'Status: Disconnected';
+      };
+
+      socket.onerror = (error) => {
+        statusDiv.textContent = 'Status: Error';
+        console.error('WebSocket error:', error);
+      };
     }).catch(error => {
       statusDiv.textContent = 'Error accessing media devices';
       console.error('Error accessing media devices:', error);
@@ -105,8 +100,12 @@
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
+    if (socket) {
+      socket.close();
+    }
     startButton.disabled = false;
     stopButton.disabled = true;
+    statusDiv.textContent = 'Status: Not Connected';
   }
 
   // Add event listeners to the buttons
