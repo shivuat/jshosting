@@ -61,7 +61,7 @@
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
-        mediaRecorder.start(5000); // Send data every 5 seconds
+        mediaRecorder.start(1000); // Send data every 5 seconds
         startButton.disabled = true;
         stopButton.disabled = false;
       };
