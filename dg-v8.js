@@ -9,14 +9,13 @@
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
-  statusDiv.innerText = 'Press the mic to start recording';
-  statusDiv.style = 'position: fixed; bottom: 100px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px;';
+  statusDiv.style = 'position: fixed; bottom: 100px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(statusDiv);
 
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'position: fixed; bottom: 150px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto;';
+  transcriptDiv.style = 'position: fixed; bottom: 150px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto; display: none;';
   document.body.appendChild(transcriptDiv);
 
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
@@ -35,6 +34,7 @@
 
   function startRecording() {
     statusDiv.textContent = 'Recording...';
+    statusDiv.style.display = 'block';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'YOUR_DEEPGRAM_API_KEY']);
@@ -47,6 +47,7 @@
         };
         mediaRecorder.start(1000);
         isRecording = true;
+        micButton.style.backgroundColor = '#f44336';
       };
 
       socket.onmessage = (message) => {
@@ -56,15 +57,16 @@
         if (transcript && received.is_final) {
           fullTranscript += transcript.trim() + '\n';
           transcriptDiv.textContent = transcript.trim();
+          transcriptDiv.style.display = 'block';
         }
       };
 
       socket.onclose = () => {
-        statusDiv.textContent = 'Status: Disconnected';
+        console.log('WebSocket closed');
       };
 
       socket.onerror = (error) => {
-        statusDiv.textContent = 'Status: Error';
+        statusDiv.textContent = 'Error: ' + error.message;
         console.error('WebSocket error:', error);
       };
     }).catch(error => {
@@ -82,6 +84,7 @@
       socket.close();
     }
     statusDiv.textContent = 'Recording stopped';
+    micButton.style.backgroundColor = '#4CAF50';
     isRecording = false;
 
     // Call OpenAI API to get summarization and intent
