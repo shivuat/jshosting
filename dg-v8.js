@@ -1,5 +1,53 @@
 (async function() {
-  // ... (previous code)
+  // Create and style the controls div
+  var controlsDiv = document.createElement('div');
+  controlsDiv.id = 'controls';
+  controlsDiv.style = 'position: fixed; top: 10px; right: 10px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px;';
+  document.body.appendChild(controlsDiv);
+
+  // Create and style the start button
+  var startButton = document.createElement('button');
+  startButton.id = 'startButton';
+  startButton.innerText = 'Start Recording';
+  startButton.style = 'margin-right: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;';
+  controlsDiv.appendChild(startButton);
+
+  // Create and style the stop button
+  var stopButton = document.createElement('button');
+  stopButton.id = 'stopButton';
+  stopButton.innerText = 'Stop Recording';
+  stopButton.style = 'margin-right: 5px; padding: 5px 10px; background-color: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;';
+  stopButton.disabled = true;
+  controlsDiv.appendChild(stopButton);
+
+  // Create and style the status div
+  var statusDiv = document.createElement('div');
+  statusDiv.id = 'status';
+  statusDiv.innerText = 'Status: Not Connected';
+  statusDiv.style = 'margin-top: 10px; padding: 5px; background-color: lightgray;';
+  controlsDiv.appendChild(statusDiv);
+
+  // Create and style the transcript div
+  var transcriptDiv = document.createElement('div');
+  transcriptDiv.id = 'transcript';
+  transcriptDiv.style = 'margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; height: 400px; max-height: 1400px; width: 1000px; overflow-y: scroll; border: 1px solid black; padding: 5px;';
+  controlsDiv.appendChild(transcriptDiv);
+
+  // Create and style the results div
+  var resultsDiv = document.createElement('div');
+  resultsDiv.id = 'results';
+  resultsDiv.style = 'margin-top: 10px; padding: 5px;';
+  controlsDiv.appendChild(resultsDiv);
+
+  // JavaScript for handling recording, WebSocket connection, and waveform visualization
+  let mediaRecorder;
+  let socket;
+  let fullTranscript = '';
+  let audioContext;
+  let analyser;
+  let dataArray;
+  let bufferLength;
+  let canvasContext;
 
   function startRecording() {
     statusDiv.textContent = 'Status: Connecting...';
@@ -12,18 +60,10 @@
       bufferLength = analyser.frequencyBinCount;
       dataArray = new Uint8Array(bufferLength);
 
+      canvasContext = document.getElementById('waveform').getContext('2d');
+
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
-
-      waveSurfer.microphone.on('deviceReady', function(stream) {
-        console.log('Device ready!', stream);
-      });
-
-      waveSurfer.microphone.on('deviceError', function(code) {
-        console.warn('Device error: ' + code);
-      });
-
-      waveSurfer.microphone.start();
 
       socket.onopen = () => {
         statusDiv.textContent = 'Status: Connected';
@@ -35,6 +75,7 @@
         mediaRecorder.start(1000);
         startButton.disabled = true;
         stopButton.disabled = false;
+        drawWaveform();
       };
 
       socket.onmessage = (message) => {
@@ -83,9 +124,6 @@
     if (socket) {
       socket.close();
     }
-    if (waveSurfer.microphone) {
-      waveSurfer.microphone.stop();
-    }
     startButton.disabled = false;
     stopButton.disabled = true;
     statusDiv.textContent = 'Status: Not Connected';
@@ -117,3 +155,149 @@
       // Remove prompt
       promptDiv.remove();
     });
+  }
+
+  // Function to call OpenAI API
+  async function callOpenAiAPI(transcript, apiKey) {
+    const maxLength = 4096; // Maximum token length for the model
+
+    // Trim the transcript if it's too long
+    if (transcript.length > maxLength) {
+      transcript = transcript.substring(0, maxLength);
+    }
+
+    try {
+      // Summarization
+      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Summarize the following conversation:');
+      // Intent
+      const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
+      
+      return {
+        summary,
+        intent
+      };
+    } catch (error) {
+      console.error('Error during OpenAI API calls:', error);
+      return { error: 'Error during OpenAI API calls: ' + error.message };
+    }
+  }
+
+  // Function to call a specific OpenAI endpoint
+  async function callOpenAiEndpoint(url, transcript, apiKey, prompt) {
+    const options = {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: `${prompt}\n\n${transcript}\n\nResponse:` }
+        ],
+        max_tokens: 150,
+        n: 1,
+        stop: ['\n']
+      })
+    };
+
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Fetch failed:', data);
+      throw new Error('Fetch failed');
+    }
+    return data.choices[0].message.content.trim();
+  }
+
+  // Function to display results
+  function displayResults(analysis) {
+    const resultsBox = document.createElement('div');
+    resultsBox.style = 'border: 1px solid black; padding: 10px; margin-top: 10px;';
+
+    const resultsTitle = document.createElement('h3');
+    resultsTitle.textContent = 'Analysis Results:';
+    resultsBox.appendChild(resultsTitle);
+
+    if (analysis.error) {
+      const errorContent = document.createElement('p');
+      errorContent.textContent = `Error: ${analysis.error}`;
+      resultsBox.appendChild(errorContent);
+    } else {
+      const summaryContent = document.createElement('p');
+      summaryContent.textContent = `Summary: ${analysis.summary}`;
+      summaryContent.className = 'summary';
+      resultsBox.appendChild(summaryContent);
+
+      const intentContent = document.createElement('p');
+      intentContent.textContent = `Intent: ${analysis.intent}`;
+      intentContent.className = 'intent';
+      resultsBox.appendChild(intentContent);
+    }
+
+    resultsDiv.appendChild(resultsBox);
+  }
+
+  // Add event listeners to the buttons
+  startButton.addEventListener('click', startRecording);
+  stopButton.addEventListener('click', stopRecording);
+
+  // Adding styles for summary and intent
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .summary {
+      background-color: #e0f7fa;
+      padding: 5px;
+      border-radius: 5px;
+    }
+    .intent {
+      background-color: #fff3e0;
+      padding: 5px;
+      border-radius: 5px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Create and style the waveform canvas
+  var canvas = document.createElement('canvas');
+  canvas.id = 'waveform';
+  canvas.width = 1000;
+  canvas.height = 100;
+  canvas.style = 'margin-top: 10px; border: 1px solid black;';
+  controlsDiv.appendChild(canvas);
+
+  // Function to draw waveform
+  function drawWaveform() {
+    requestAnimationFrame(drawWaveform);
+
+    analyser.getByteTimeDomainData(dataArray);
+
+    canvasContext.fillStyle = 'white';
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvasContext.lineWidth = 2;
+    canvasContext.strokeStyle = 'black';
+
+    canvasContext.beginPath();
+
+    const sliceWidth = canvas.width * 1.0 / bufferLength;
+    let x = 0;
+
+    for (let i = 0; i < bufferLength; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = v * canvas.height / 2;
+
+      if (i === 0) {
+        canvasContext.moveTo(x, y);
+      } else {
+        canvasContext.lineTo(x, y);
+      }
+
+      x += sliceWidth;
+    }
+
+    canvasContext.lineTo(canvas.width, canvas.height / 2);
+    canvasContext.stroke();
+  }
+})();
