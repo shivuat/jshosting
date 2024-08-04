@@ -50,9 +50,14 @@
   wavesurferScript.src = 'https://unpkg.com/wavesurfer.js';
   document.body.appendChild(wavesurferScript);
 
-  // Wait for WaveSurfer.js to load
+  // Include WaveSurfer Microphone plugin script
+  var wavesurferMicrophoneScript = document.createElement('script');
+  wavesurferMicrophoneScript.src = 'https://unpkg.com/wavesurfer.js/dist/plugin/wavesurfer.microphone.min.js';
+  document.body.appendChild(wavesurferMicrophoneScript);
+
+  // Wait for WaveSurfer.js and its plugin to load
   await new Promise(resolve => {
-    wavesurferScript.onload = resolve;
+    wavesurferMicrophoneScript.onload = resolve;
   });
 
   // Initialize WaveSurfer after ensuring the library is loaded
@@ -60,7 +65,10 @@
     container: '#waveform',
     waveColor: 'violet',
     interact: false,
-    cursorWidth: 0
+    cursorWidth: 0,
+    plugins: [
+      WaveSurfer.microphone.create()
+    ]
   });
 
   // JavaScript for handling recording, WebSocket connection, and waveform visualization
@@ -85,10 +93,6 @@
 
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
-
-      waveSurfer.microphone = WaveSurfer.microphone.create({
-        wavesurfer: waveSurfer
-      });
 
       waveSurfer.microphone.on('deviceReady', function(stream) {
         console.log('Device ready!', stream);
