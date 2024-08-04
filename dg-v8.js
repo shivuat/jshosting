@@ -55,7 +55,7 @@
     wavesurferScript.onload = resolve;
   });
 
-  // Initialize WaveSurfer
+  // Initialize WaveSurfer after ensuring the library is loaded
   var waveSurfer = WaveSurfer.create({
     container: '#waveform',
     waveColor: 'violet',
