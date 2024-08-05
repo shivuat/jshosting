@@ -158,6 +158,6 @@
     }
   }
 
-  // Add event listener to the mic button
+  // Add event listener to the mic butto
   micButton.addEventListener('click', toggleRecording);
 })();
