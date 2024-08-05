@@ -18,7 +18,6 @@
   micButton.draggable = true;
   document.body.appendChild(micButton);
 
- 
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
   statusDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
@@ -27,7 +26,7 @@
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto; display: none;';
+  transcriptDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 600px; max-height: 400px; overflow-y: auto; display: none; white-space: pre-wrap;';
   document.body.appendChild(transcriptDiv);
 
   // Create and style the intent div
@@ -53,7 +52,7 @@
 
   console.log('GIF div added:', recordingGifDiv);
 
-   // Create and style the close messages button
+  // Create and style the close messages button
   var closeButton = document.createElement('button');
   closeButton.id = 'closeButton';
   closeButton.innerHTML = 'Close Messages';
@@ -84,7 +83,7 @@
   function startRecording() {
     fullTranscript = '';
     recentConversations = [];
-    transcriptDiv.textContent='';
+    transcriptDiv.textContent = '';
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
     recordingGifDiv.style.display = 'block';
@@ -131,6 +130,7 @@
           }
           transcriptDiv.textContent = recentConversations.join('\n\n');
           transcriptDiv.style.display = 'block';
+          transcriptDiv.style.maxHeight = 'none';
         }
       };
 
@@ -165,7 +165,7 @@
 
     // Clear old intent values before storing new ones
     sessionStorage.removeItem('intent');
-     sessionStorage.removeItem('intent_device');
+    sessionStorage.removeItem('intent_device');
     sessionStorage.removeItem('intent_protectionPlan');
 
     // Call OpenAI API to get intent
@@ -235,8 +235,8 @@
     } else {
       intentDiv.textContent = `Intent: ${analysis.intent}`;
       sessionStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
-      sessionStorage.setItem('intent_device', analysis.devicename); 
-      sessionStorage.setItem('intent_protectionPlan', analysis.protectionplan); 
+      sessionStorage.setItem('intent_device', analysis.devicename);
+      sessionStorage.setItem('intent_protectionPlan', analysis.protectionplan);
       intentDiv.style.display = 'block';
     }
   }
@@ -283,6 +283,6 @@
   });
 
   // Display stored intent on page load
- // displayStoredIntent();
+  // displayStoredIntent();
 
 })();
