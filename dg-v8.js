@@ -88,7 +88,7 @@
     isRecording = false;
 
     // Call OpenAI API to get summarization and intent
-    callOpenAiAPI(fullTranscript, 'YOUR_OPENAI_API_KEY').then((analysisResults) => {
+    callOpenAiAPI(fullTranscript, 'sk-proj-PneN3N8cXYq3hUSlR8fYT3BlbkFJr2RjVqKCvAowxI8C5fm5').then((analysisResults) => {
       displayResults(analysisResults);
     });
   }
