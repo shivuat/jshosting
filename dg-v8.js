@@ -3,7 +3,8 @@
   var micButton = document.createElement('button');
   micButton.id = 'micButton';
   micButton.innerHTML = '🎤';
-  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer;';
+  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
+  micButton.draggable = true;
   document.body.appendChild(micButton);
 
   // Create and style the status div
@@ -23,12 +24,25 @@
   let socket;
   let fullTranscript = '';
   let isRecording = false;
+  let apiKey = '';
+
+  // Prompt for API Key
+  function promptForApiKey() {
+    apiKey = prompt("Please enter your API key:");
+    if (!apiKey) {
+      alert("API key is required to proceed.");
+      return false;
+    }
+    return true;
+  }
 
   async function toggleRecording() {
     if (isRecording) {
       stopRecording();
     } else {
-      startRecording();
+      if (promptForApiKey()) {
+        startRecording();
+      }
     }
   }
 
@@ -88,7 +102,7 @@
     isRecording = false;
 
     // Call OpenAI API to get summarization and intent
-    callOpenAiAPI(fullTranscript, 'sk-proj-PneN3N8cXYq3hUSlR8fYT3BlbkFJr2RjVqKCvAowxI8C5fm5').then((analysisResults) => {
+    callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
       displayResults(analysisResults);
     });
   }
@@ -158,6 +172,28 @@
     }
   }
 
-  // Add event listener to the mic butto
+  // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
+
+  // Make the mic button movable
+  micButton.addEventListener('dragstart', function(event) {
+    event.dataTransfer.setData('text/plain', null);
+    var style = window.getComputedStyle(event.target, null);
+    var str = (parseInt(style.getPropertyValue('left'),10) - event.clientX) + ',' + (parseInt(style.getPropertyValue('top'),10) - event.clientY);
+    event.dataTransfer.setData("Text", str);
+  });
+
+  document.body.addEventListener('dragover', function(event) {
+    event.preventDefault();
+    return false;
+  });
+
+  document.body.addEventListener('drop', function(event) {
+    var offset = event.dataTransfer.getData("Text").split(',');
+    micButton.style.left = (event.clientX + parseInt(offset[0], 10)) + 'px';
+    micButton.style.top = (event.clientY + parseInt(offset[1], 10)) + 'px';
+    event.preventDefault();
+    return false;
+  });
+
 })();
