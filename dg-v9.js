@@ -186,7 +186,7 @@
     try {
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
-      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name from the list:Apple,Samsung,Nokia mentioned in the conversation and output only a name from the list.If iPhone,Apple should be used:');
+      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', intent, apiKey, 'Identify the device name from the list:Apple,Samsung,Nokia mentioned in the conversation and output only a name from the list.If iPhone,Apple should be used:');
       const protectionplan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the features requested by the customer (e.g., Device protection plan, Travel pass).Output only one of this value if present :');
       return {
         intent,
