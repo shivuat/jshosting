@@ -42,11 +42,14 @@
   recordingGifDiv.style = 'position: fixed; width: 50px; height: 50px; display: none;';
   statusDiv.appendChild(recordingGifDiv);
 
-  // Add the GIF image for recording simulation
-  var gifImage = document.createElement('img');
-  gifImage.src = 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif'; // Example GIF URL
-  gifImage.style = 'width: 100%; height: 100%;';
-  recordingGifDiv.appendChild(gifImage);
+  // Add the iframe for recording simulation
+  var gifIframe = document.createElement('iframe');
+  gifIframe.src = 'https://giphy.com/embed/n3PTeKz9qxvVhfGqf0';
+  gifIframe.width = '50';
+  gifIframe.height = '50';
+  gifIframe.style = 'border: none;';
+  gifIframe.allowFullscreen = true;
+  recordingGifDiv.appendChild(gifIframe);
 
   console.log('GIF div added:', recordingGifDiv);
 
@@ -69,6 +72,7 @@
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
     recordingGifDiv.style.display = 'block';
+    console.log('Showing recording GIF');
     micButton.style.backgroundColor = 'black';
     micButton.style.color = 'white';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
@@ -139,6 +143,7 @@
     micButton.style.backgroundColor = 'white';
     micButton.style.color = 'black';
     recordingGifDiv.style.display = 'none';
+    console.log('Hiding recording GIF');
     isRecording = false;
 
     // Clear old intent values before storing new ones
