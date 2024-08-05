@@ -1,4 +1,19 @@
 (async function() {
+  // Prompt for API Key before loading the mic icon
+  let apiKey = '';
+  function promptForApiKey() {
+    apiKey = prompt("Please enter your API key:");
+    if (!apiKey) {
+      alert("API key is required to proceed.");
+      return false;
+    }
+    return true;
+  }
+
+  if (!promptForApiKey()) {
+    return; // Exit if API key is not provided
+  }
+
   // Create and style the mic button
   var micButton = document.createElement('button');
   micButton.id = 'micButton';
@@ -10,40 +25,33 @@
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
-  statusDiv.style = 'position: fixed; bottom: 100px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
+  statusDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(statusDiv);
 
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
-  transcriptDiv.style = 'position: fixed; bottom: 150px; right: 20px; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto; display: none;';
+  transcriptDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto; display: none;';
   document.body.appendChild(transcriptDiv);
+
+  // Create and style the intent div
+  var intentDiv = document.createElement('div');
+  intentDiv.id = 'intent';
+  intentDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
+  document.body.appendChild(intentDiv);
 
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
   let socket;
   let fullTranscript = '';
   let isRecording = false;
-  let apiKey = '';
   let recentConversations = [];
-
-  // Prompt for API Key
-  function promptForApiKey() {
-    apiKey = prompt("Please enter your API key:");
-    if (!apiKey) {
-      alert("API key is required to proceed.");
-      return false;
-    }
-    return true;
-  }
 
   async function toggleRecording() {
     if (isRecording) {
       stopRecording();
     } else {
-      if (promptForApiKey()) {
-        startRecording();
-      }
+      startRecording();
     }
   }
 
@@ -121,6 +129,9 @@
     micButton.style.color = 'black';
     isRecording = false;
 
+    // Clear old intent values before storing new ones
+    localStorage.removeItem('intent');
+
     // Call OpenAI API to get intent
     callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
       displayResults(analysisResults);
@@ -181,10 +192,11 @@
   // Function to display results
   function displayResults(analysis) {
     if (analysis.error) {
-      transcriptDiv.textContent += `\nError: ${analysis.error}`;
+      intentDiv.textContent = `Error: ${analysis.error}`;
     } else {
-      transcriptDiv.textContent += `\nIntent: ${analysis.intent}`;
-      localStorage.setItem('intent', analysis.intent);
+      intentDiv.textContent = `Intent: ${analysis.intent}`;
+      localStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
+      intentDiv.style.display = 'block';
     }
   }
 
@@ -192,15 +204,15 @@
   function displayStoredIntent() {
     const storedIntent = localStorage.getItem('intent');
     if (storedIntent) {
-      transcriptDiv.textContent += `\nStored Intent: ${storedIntent}`;
-      transcriptDiv.style.display = 'block';
+      intentDiv.textContent = `Stored Intent: ${storedIntent}`;
+      intentDiv.style.display = 'block';
     }
   }
 
   // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
 
-  // Make the mic button movable
+  // Make the mic button movable and update positions of status, transcript, and intent divs
   micButton.addEventListener('dragstart', function(event) {
     event.dataTransfer.setData('text/plain', null);
     var style = window.getComputedStyle(event.target, null);
@@ -217,6 +229,12 @@
     var offset = event.dataTransfer.getData("Text").split(',');
     micButton.style.left = (event.clientX + parseInt(offset[0], 10)) + 'px';
     micButton.style.top = (event.clientY + parseInt(offset[1], 10)) + 'px';
+    statusDiv.style.left = micButton.style.left;
+    statusDiv.style.top = (parseInt(micButton.style.top, 10) + 80) + 'px';
+    transcriptDiv.style.left = micButton.style.left;
+    transcriptDiv.style.top = (parseInt(statusDiv.style.top, 10) + 60) + 'px';
+    intentDiv.style.left = micButton.style.left;
+    intentDiv.style.top = (parseInt(transcriptDiv.style.top, 10) + 220) + 'px';
     event.preventDefault();
     return false;
   });
