@@ -3,7 +3,7 @@
   var micButton = document.createElement('button');
   micButton.id = 'micButton';
   micButton.innerHTML = '🎤';
-  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
+  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: white; color: black; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
   micButton.draggable = true;
   document.body.appendChild(micButton);
 
@@ -25,6 +25,7 @@
   let fullTranscript = '';
   let isRecording = false;
   let apiKey = '';
+  let recentConversations = [];
 
   // Prompt for API Key
   function promptForApiKey() {
@@ -49,6 +50,8 @@
   function startRecording() {
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
+    micButton.style.backgroundColor = 'black';
+    micButton.style.color = 'white';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
@@ -61,16 +64,32 @@
         };
         mediaRecorder.start(1000);
         isRecording = true;
-        micButton.style.backgroundColor = '#f44336';
       };
 
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         const transcript = received.channel.alternatives[0].transcript;
+        const words = received.channel.alternatives[0].words;
 
         if (transcript && received.is_final) {
-          fullTranscript += transcript.trim() + '\n';
-          transcriptDiv.textContent = transcript.trim();
+          let transcriptText = '';
+          let currentSpeaker = null;
+          words.forEach(word => {
+            if (word.speaker !== currentSpeaker) {
+              if (currentSpeaker !== null) {
+                transcriptText += '\n';
+              }
+              currentSpeaker = word.speaker;
+              transcriptText += `[Speaker ${currentSpeaker}] `;
+            }
+            transcriptText += `${word.punctuated_word} `;
+          });
+          fullTranscript += transcriptText.trim() + '\n';
+          recentConversations.push(transcriptText.trim());
+          if (recentConversations.length > 2) {
+            recentConversations.shift();
+          }
+          transcriptDiv.textContent = recentConversations.join('\n\n');
           transcriptDiv.style.display = 'block';
         }
       };
@@ -98,10 +117,11 @@
       socket.close();
     }
     statusDiv.textContent = 'Recording stopped';
-    micButton.style.backgroundColor = '#4CAF50';
+    micButton.style.backgroundColor = 'white';
+    micButton.style.color = 'black';
     isRecording = false;
 
-    // Call OpenAI API to get summarization and intent
+    // Call OpenAI API to get intent
     callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
       displayResults(analysisResults);
     });
@@ -117,13 +137,10 @@
     }
 
     try {
-      // Summarization
-      const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Summarize the following conversation:');
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
       
       return {
-        summary,
         intent
       };
     } catch (error) {
@@ -166,9 +183,17 @@
     if (analysis.error) {
       transcriptDiv.textContent += `\nError: ${analysis.error}`;
     } else {
-      transcriptDiv.textContent += `\nSummary: ${analysis.summary}`;
       transcriptDiv.textContent += `\nIntent: ${analysis.intent}`;
-      localStorage.setItem('latestIntent', analysis.intent);
+      localStorage.setItem('intent', analysis.intent);
+    }
+  }
+
+  // Retrieve and display intent from local storage
+  function displayStoredIntent() {
+    const storedIntent = localStorage.getItem('intent');
+    if (storedIntent) {
+      transcriptDiv.textContent += `\nStored Intent: ${storedIntent}`;
+      transcriptDiv.style.display = 'block';
     }
   }
 
@@ -179,7 +204,7 @@
   micButton.addEventListener('dragstart', function(event) {
     event.dataTransfer.setData('text/plain', null);
     var style = window.getComputedStyle(event.target, null);
-    var str = (parseInt(style.getPropertyValue('left'),10) - event.clientX) + ',' + (parseInt(style.getPropertyValue('top'),10) - event.clientY);
+    var str = (parseInt(style.getPropertyValue('left'), 10) - event.clientX) + ',' + (parseInt(style.getPropertyValue('top'), 10) - event.clientY);
     event.dataTransfer.setData("Text", str);
   });
 
@@ -195,5 +220,8 @@
     event.preventDefault();
     return false;
   });
+
+  // Display stored intent on page load
+  displayStoredIntent();
 
 })();
