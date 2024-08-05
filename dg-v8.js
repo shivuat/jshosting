@@ -40,12 +40,34 @@
   intentDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(intentDiv);
 
+  // Create and style the sound simulation div
+  var soundSimDiv = document.createElement('div');
+  soundSimDiv.id = 'soundSim';
+  soundSimDiv.style = 'position: fixed; width: 100px; height: 20px; background-color: black; display: none; overflow: hidden;';
+  statusDiv.appendChild(soundSimDiv);
+
+  // Create sound simulation bars
+  for (let i = 0; i < 5; i++) {
+    var bar = document.createElement('div');
+    bar.style = 'width: 10px; height: 100%; background-color: lime; display: inline-block; margin-right: 2px;';
+    bar.className = 'soundBar';
+    soundSimDiv.appendChild(bar);
+  }
+
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
   let socket;
   let fullTranscript = '';
   let isRecording = false;
   let recentConversations = [];
+
+  function updateSoundSimulation() {
+    const bars = document.querySelectorAll('.soundBar');
+    bars.forEach(bar => {
+      const height = Math.random() * 100;
+      bar.style.height = `${height}%`;
+    });
+  }
 
   async function toggleRecording() {
     if (isRecording) {
@@ -58,6 +80,7 @@
   function startRecording() {
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
+    soundSimDiv.style.display = 'block';
     micButton.style.backgroundColor = 'black';
     micButton.style.color = 'white';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
@@ -72,6 +95,7 @@
         };
         mediaRecorder.start(1000);
         isRecording = true;
+        setInterval(updateSoundSimulation, 500);
       };
 
       socket.onmessage = (message) => {
@@ -127,6 +151,7 @@
     statusDiv.textContent = 'Recording stopped';
     micButton.style.backgroundColor = 'white';
     micButton.style.color = 'black';
+    soundSimDiv.style.display = 'none';
     isRecording = false;
 
     // Clear old intent values before storing new ones
@@ -212,7 +237,7 @@
   // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
 
-  // Make the mic button movable and update positions of status, transcript, and intent divs
+  // Make the mic button movable and update positions of status, transcript, intent, and sound simulation divs
   micButton.addEventListener('dragstart', function(event) {
     event.dataTransfer.setData('text/plain', null);
     var style = window.getComputedStyle(event.target, null);
@@ -235,6 +260,8 @@
     transcriptDiv.style.top = (parseInt(statusDiv.style.top, 10) + 60) + 'px';
     intentDiv.style.left = micButton.style.left;
     intentDiv.style.top = (parseInt(transcriptDiv.style.top, 10) + 220) + 'px';
+    soundSimDiv.style.left = statusDiv.style.left;
+    soundSimDiv.style.top = (parseInt(statusDiv.style.top, 10) + 30) + 'px';
     event.preventDefault();
     return false;
   });
