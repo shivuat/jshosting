@@ -53,6 +53,19 @@
 
   console.log('GIF div added:', recordingGifDiv);
 
+   // Create and style the close messages button
+  var closeButton = document.createElement('button');
+  closeButton.id = 'closeButton';
+  closeButton.innerHTML = 'Close Messages';
+  closeButton.style = 'position: fixed; bottom: 100px; right: 20px; z-index: 9999; background-color: red; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; display: none;';
+  document.body.appendChild(closeButton);
+  closeButton.addEventListener('click', function() {
+    statusDiv.style.display = 'none';
+    transcriptDiv.style.display = 'none';
+    intentDiv.style.display = 'none';
+    closeButton.style.display = 'none';
+  });
+
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
   let socket;
