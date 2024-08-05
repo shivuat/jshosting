@@ -18,7 +18,7 @@
   micButton.draggable = true;
   document.body.appendChild(micButton);
 
-  // Create and style the status div
+ 
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
   statusDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
