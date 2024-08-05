@@ -1,13 +1,13 @@
 (async function() {
   // Prompt for API Key before loading the mic icon
-  let apiKey = localStorage.getItem('oikey');
+  let apiKey = sessionStorage.getItem('oikey');
   if (!apiKey) {
     apiKey = prompt("Please enter your API key:");
     if (!apiKey) {
       alert("API key is required to proceed.");
       return; // Exit if API key is not provided
     }
-    localStorage.setItem('oikey', apiKey);
+    sessionStorage.setItem('oikey', apiKey);
   }
 
   // Create and style the mic button
@@ -150,9 +150,9 @@
     isRecording = false;
 
     // Clear old intent values before storing new ones
-    localStorage.removeItem('intent');
-     localStorage.removeItem('intent_device');
-    localStorage.removeItem('intent_protectionPlan');
+    sessionStorage.removeItem('intent');
+     sessionStorage.removeItem('intent_device');
+    sessionStorage.removeItem('intent_protectionPlan');
 
     // Call OpenAI API to get intent
     callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
@@ -172,7 +172,7 @@
     try {
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
-      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name (e.g.,Apple,Samsung) mentioned in the conversation:');
+      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name from the list:Apple,Samsung,Nokia mentioned in the conversation and output only a name from the list:');
       const protectionplan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the features requested by the customer (e.g., Device protection plan, Travel pass).Output only one of this value if present :');
       return {
         intent,
@@ -220,16 +220,16 @@
       intentDiv.textContent = `Error: ${analysis.error}`;
     } else {
       intentDiv.textContent = `Intent: ${analysis.intent}`;
-      localStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
-      localStorage.setItem('intent_device', analysis.devicename); 
-      localStorage.setItem('intent_protectionPlan', analysis.protectionplan); 
+      sessionStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
+      sessionStorage.setItem('intent_device', analysis.devicename); 
+      sessionStorage.setItem('intent_protectionPlan', analysis.protectionplan); 
       intentDiv.style.display = 'block';
     }
   }
 
   // Retrieve and display intent from local storage
   function displayStoredIntent() {
-    const storedIntent = localStorage.getItem('intent');
+    const storedIntent = sessionStorage.getItem('intent');
     if (storedIntent) {
       intentDiv.textContent = `Stored Intent: ${storedIntent}`;
       intentDiv.style.display = 'block';
