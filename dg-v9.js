@@ -148,6 +148,8 @@
 
     // Clear old intent values before storing new ones
     localStorage.removeItem('intent');
+     localStorage.removeItem('intent_device');
+    localStorage.removeItem('intent_protectionPlan');
 
     // Call OpenAI API to get intent
     callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
@@ -167,9 +169,12 @@
     try {
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
-      
+      const intent_device = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name (e.g.,Apple,Samsung) mentioned in the conversation:');
+      const intent_protectionPlan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the features requested by the customer (e.g., Device protection plan, Travel pass:');
       return {
-        intent
+        intent,
+        devicename,
+        protectionplan
       };
     } catch (error) {
       console.error('Error during OpenAI API calls:', error);
@@ -213,7 +218,9 @@
     } else {
       intentDiv.textContent = `Intent: ${analysis.intent}`;
       localStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
-      //intentDiv.style.display = 'block';
+      localStorage.setItem('intent_device', analysis.devicename); 
+      localStorage.setItem('intent_protectionPlan', analysis.protectionplan); 
+      intentDiv.style.display = 'block';
     }
   }
 
