@@ -48,6 +48,8 @@
   gifImage.style = 'width: 100%; height: 100%;';
   recordingGifDiv.appendChild(gifImage);
 
+  console.log('GIF div added:', recordingGifDiv);
+
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
   let socket;
