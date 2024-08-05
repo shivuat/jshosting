@@ -3,7 +3,7 @@
   var micButton = document.createElement('button');
   micButton.id = 'micButton';
   micButton.innerHTML = '🎤';
-  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 24px; cursor: pointer;';
+  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; cursor: pointer;';
   document.body.appendChild(micButton);
 
   // Create and style the status div
