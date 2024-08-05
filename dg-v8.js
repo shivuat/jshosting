@@ -36,29 +36,17 @@
   intentDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(intentDiv);
 
-  // Create and style the sound simulation div
-  var soundSimDiv = document.createElement('div');
-  soundSimDiv.id = 'soundSim';
-  soundSimDiv.style = 'position: fixed; width: 100px; height: 20px; display: none; overflow: hidden;';
-  statusDiv.appendChild(soundSimDiv);
+  // Create and style the recording GIF div
+  var recordingGifDiv = document.createElement('div');
+  recordingGifDiv.id = 'recordingGif';
+  recordingGifDiv.style = 'position: fixed; width: 50px; height: 50px; display: none;';
+  statusDiv.appendChild(recordingGifDiv);
 
-  // Create sound simulation bars
-  for (let i = 0; i < 5; i++) {
-    var bar = document.createElement('div');
-    bar.style = 'width: 10px; height: 100%; background-color: lime; display: inline-block; margin-right: 2px; animation: bounce 1s infinite;';
-    bar.className = 'soundBar';
-    soundSimDiv.appendChild(bar);
-  }
-
-  // CSS animation for sound simulation
-  var style = document.createElement('style');
-  style.innerHTML = `
-    @keyframes bounce {
-      0%, 100% { height: 10%; }
-      50% { height: 100%; }
-    }
-  `;
-  document.head.appendChild(style);
+  // Add the GIF image for recording simulation
+  var gifImage = document.createElement('img');
+  gifImage.src = 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif'; // Example GIF URL
+  gifImage.style = 'width: 100%; height: 100%;';
+  recordingGifDiv.appendChild(gifImage);
 
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
@@ -78,7 +66,7 @@
   function startRecording() {
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
-    soundSimDiv.style.display = 'block';
+    recordingGifDiv.style.display = 'block';
     micButton.style.backgroundColor = 'black';
     micButton.style.color = 'white';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
@@ -148,7 +136,7 @@
     statusDiv.textContent = 'Recording stopped';
     micButton.style.backgroundColor = 'white';
     micButton.style.color = 'black';
-    soundSimDiv.style.display = 'none';
+    recordingGifDiv.style.display = 'none';
     isRecording = false;
 
     // Clear old intent values before storing new ones
@@ -234,7 +222,7 @@
   // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
 
-  // Make the mic button movable and update positions of status, transcript, intent, and sound simulation divs
+  // Make the mic button movable and update positions of status, transcript, intent, and recording GIF divs
   micButton.addEventListener('dragstart', function(event) {
     event.dataTransfer.setData('text/plain', null);
     var style = window.getComputedStyle(event.target, null);
@@ -257,8 +245,8 @@
     transcriptDiv.style.top = (parseInt(statusDiv.style.top, 10) + 60) + 'px';
     intentDiv.style.left = micButton.style.left;
     intentDiv.style.top = (parseInt(transcriptDiv.style.top, 10) + 220) + 'px';
-    soundSimDiv.style.left = statusDiv.style.left;
-    soundSimDiv.style.top = (parseInt(statusDiv.style.top, 10) + 30) + 'px';
+    recordingGifDiv.style.left = statusDiv.style.left;
+    recordingGifDiv.style.top = (parseInt(statusDiv.style.top, 10) + 30) + 'px';
     event.preventDefault();
     return false;
   });
