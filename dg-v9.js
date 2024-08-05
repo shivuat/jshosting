@@ -9,33 +9,39 @@
     }
     sessionStorage.setItem('oikey', apiKey);
   }
+
   // Create and style the mic button
   var micButton = document.createElement('button');
-  micButton.id = '🎤';
-  micButton.innerHTML = ':microphone:';
+  micButton.id = 'micButton';
+  micButton.innerHTML = '🎤';
   micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: white; color: black; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
   micButton.draggable = true;
   document.body.appendChild(micButton);
+
   // Create and style the status div
   var statusDiv = document.createElement('div');
   statusDiv.id = 'status';
   statusDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(statusDiv);
+
   // Create and style the transcript div
   var transcriptDiv = document.createElement('div');
   transcriptDiv.id = 'transcript';
   transcriptDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; max-width: 300px; max-height: 200px; overflow-y: auto; display: none;';
   document.body.appendChild(transcriptDiv);
+
   // Create and style the intent div
   var intentDiv = document.createElement('div');
   intentDiv.id = 'intent';
   intentDiv.style = 'position: fixed; z-index: 9999; background-color: white; padding: 10px; border: 1px solid black; border-radius: 5px; display: none;';
   document.body.appendChild(intentDiv);
+
   // Create and style the recording GIF div
   var recordingGifDiv = document.createElement('div');
   recordingGifDiv.id = 'recordingGif';
   recordingGifDiv.style = 'position: fixed; width: 50px; height: 50px; display: none;';
   statusDiv.appendChild(recordingGifDiv);
+
   // Add the iframe for recording simulation
   var gifIframe = document.createElement('iframe');
   gifIframe.src = 'https://giphy.com/embed/n3PTeKz9qxvVhfGqf0';
@@ -44,25 +50,16 @@
   gifIframe.style = 'border: none;';
   gifIframe.allowFullscreen = true;
   recordingGifDiv.appendChild(gifIframe);
+
   console.log('GIF div added:', recordingGifDiv);
-  // Create and style the close messages button
-  var closeButton = document.createElement('button');
-  closeButton.id = 'closeButton';
-  closeButton.innerHTML = 'Close Messages';
-  closeButton.style = 'position: fixed; bottom: 100px; right: 20px; z-index: 9999; background-color: red; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; display: none;';
-  document.body.appendChild(closeButton);
-  closeButton.addEventListener('click', function() {
-    statusDiv.style.display = 'none';
-    transcriptDiv.style.display = 'none';
-    intentDiv.style.display = 'none';
-    closeButton.style.display = 'none';
-  });
+
   // JavaScript for handling recording, WebSocket connection, and displaying transcript
   let mediaRecorder;
   let socket;
   let fullTranscript = '';
   let isRecording = false;
   let recentConversations = [];
+
   async function toggleRecording() {
     if (isRecording) {
       stopRecording();
@@ -70,20 +67,21 @@
       startRecording();
     }
   }
+
   function startRecording() {
-    fullTranscript = ''; // Clear transcript
-    recentConversations = []; // Clear recent conversations
-    transcriptDiv.textContent = ''; // Clear the displayed transcript
+    fullTranscript = '';
+    recentConversations = [];
+    transcriptDiv.textContent='';
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
     recordingGifDiv.style.display = 'block';
-    closeButton.style.display = 'block';
     console.log('Showing recording GIF');
     micButton.style.backgroundColor = 'black';
     micButton.style.color = 'white';
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       socket = new WebSocket('wss://api.deepgram.com/v1/listen?diarize=true&smart_format=true&redact=pci&redact=ssn&model=nova-2', ['token', 'bf373551459bce132cef3b1b065859ed3e4bac8f']);
+
       socket.onopen = () => {
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0 && socket.readyState === 1) {
@@ -93,10 +91,12 @@
         mediaRecorder.start(1000);
         isRecording = true;
       };
+
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         const transcript = received.channel.alternatives[0].transcript;
         const words = received.channel.alternatives[0].words;
+
         if (transcript && received.is_final) {
           let transcriptText = '';
           let currentSpeaker = null;
@@ -119,9 +119,11 @@
           transcriptDiv.style.display = 'block';
         }
       };
+
       socket.onclose = () => {
         console.log('WebSocket closed');
       };
+
       socket.onerror = (error) => {
         statusDiv.textContent = 'Error: ' + error.message;
         console.error('WebSocket error:', error);
@@ -131,6 +133,7 @@
       console.error('Error accessing media devices:', error);
     });
   }
+
   function stopRecording() {
     if (mediaRecorder) {
       mediaRecorder.stop();
@@ -145,39 +148,43 @@
     recordingGifDiv.style.display = 'none';
     console.log('Hiding recording GIF');
     isRecording = false;
+
     // Clear old intent values before storing new ones
     sessionStorage.removeItem('intent');
-    sessionStorage.removeItem('intent_device');
-    sessionStorage.removeItem('intent_protection_plan');
-    // Call OpenAI API to get intent, device name, and features requested
+     sessionStorage.removeItem('intent_device');
+    sessionStorage.removeItem('intent_protectionPlan');
+
+    // Call OpenAI API to get intent
     callOpenAiAPI(fullTranscript, apiKey).then((analysisResults) => {
       displayResults(analysisResults);
     });
   }
+
   // Function to call OpenAI API
   async function callOpenAiAPI(transcript, apiKey) {
     const maxLength = 4096; // Maximum token length for the model
+
     // Trim the transcript if it's too long
     if (transcript.length > maxLength) {
       transcript = transcript.substring(0, maxLength);
     }
+
     try {
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
-      // Device Name
-      const deviceName = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name (e.g., Apple, Samsung) mentioned in the following conversation:');
-      // Features Requested
-      const protectionPlan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify any features requested (e.g., Device protection plan, travel pass) in the following conversation:');
+      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the device name from the list:Apple,Samsung,Nokia mentioned in the conversation and output only a name from the list:');
+      const protectionplan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the features requested by the customer (e.g., Device protection plan, Travel pass).Output only one of this value if present :');
       return {
         intent,
-        deviceName,
-        protectionPlan
+        devicename,
+        protectionplan
       };
     } catch (error) {
       console.error('Error during OpenAI API calls:', error);
       return { error: 'Error during OpenAI API calls: ' + error.message };
     }
   }
+
   // Function to call a specific OpenAI endpoint
   async function callOpenAiEndpoint(url, transcript, apiKey, prompt) {
     const options = {
@@ -197,6 +204,7 @@
         stop: ['\n']
       })
     };
+
     const response = await fetch(url, options);
     const data = await response.json();
     if (!response.ok) {
@@ -205,30 +213,32 @@
     }
     return data.choices[0].message.content.trim();
   }
+
   // Function to display results
   function displayResults(analysis) {
     if (analysis.error) {
       intentDiv.textContent = `Error: ${analysis.error}`;
     } else {
-      intentDiv.textContent = `Intent: ${analysis.intent}\nDevice: ${analysis.deviceName}\nFeatures: ${analysis.protectionPlan}`;
-      sessionStorage.setItem('intent', analysis.intent);  // Saving intent in session storage
-      sessionStorage.setItem('intent_device', analysis.deviceName);  // Saving device name in session storage
-      sessionStorage.setItem('intent_protection_plan', analysis.protectionPlan);  // Saving features in session storage
+      intentDiv.textContent = `Intent: ${analysis.intent}`;
+      sessionStorage.setItem('intent', analysis.intent);  // Saving intent in local storage
+      sessionStorage.setItem('intent_device', analysis.devicename); 
+      sessionStorage.setItem('intent_protectionPlan', analysis.protectionplan); 
       intentDiv.style.display = 'block';
     }
   }
-  // Retrieve and display intent, device name, and features from session storage
+
+  // Retrieve and display intent from local storage
   function displayStoredIntent() {
     const storedIntent = sessionStorage.getItem('intent');
-    const storedDevice = sessionStorage.getItem('intent_device');
-    const storedProtectionPlan = sessionStorage.getItem('intent_protection_plan');
     if (storedIntent) {
-      intentDiv.textContent = `Stored Intent: ${storedIntent}\nDevice: ${storedDevice}\nFeatures: ${storedProtectionPlan}`;
+      intentDiv.textContent = `Stored Intent: ${storedIntent}`;
       intentDiv.style.display = 'block';
     }
   }
+
   // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
+
   // Make the mic button movable and update positions of status, transcript, intent, and recording GIF divs
   micButton.addEventListener('dragstart', function(event) {
     event.dataTransfer.setData('text/plain', null);
@@ -236,10 +246,12 @@
     var str = (parseInt(style.getPropertyValue('left'), 10) - event.clientX) + ',' + (parseInt(style.getPropertyValue('top'), 10) - event.clientY);
     event.dataTransfer.setData("Text", str);
   });
+
   document.body.addEventListener('dragover', function(event) {
     event.preventDefault();
     return false;
   });
+
   document.body.addEventListener('drop', function(event) {
     var offset = event.dataTransfer.getData("Text").split(',');
     micButton.style.left = (event.clientX + parseInt(offset[0], 10)) + 'px';
@@ -255,6 +267,8 @@
     event.preventDefault();
     return false;
   });
+
   // Display stored intent on page load
-  //displayStoredIntent();
+ // displayStoredIntent();
+
 })();
