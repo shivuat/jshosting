@@ -69,6 +69,9 @@
   }
 
   function startRecording() {
+    fullTranscript = '';
+    recentConversations = [];
+    transcriptDiv.textContent='';
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
     recordingGifDiv.style.display = 'block';
