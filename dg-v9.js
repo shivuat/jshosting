@@ -88,6 +88,7 @@
     statusDiv.textContent = 'Recording...';
     statusDiv.style.display = 'block';
     recordingGifDiv.style.display = 'block';
+    closeButton.style.display = 'block';
     console.log('Showing recording GIF');
     micButton.style.backgroundColor = 'black';
     micButton.style.color = 'white';
