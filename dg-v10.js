@@ -1,13 +1,13 @@
 (async function() {
   // Prompt for API Key before loading the mic icon
-  let apiKey = sessionStorage.getItem('oikey');
+  let apiKey = localStorage.getItem('oikey');
   if (!apiKey) {
     apiKey = prompt("Please enter your API key:");
     if (!apiKey) {
       alert("API key is required to proceed.");
       return; // Exit if API key is not provided
     }
-    sessionStorage.setItem('oikey', apiKey);
+    localStorage.setItem('oikey', apiKey);
   }
 
   // Create and style the mic button
