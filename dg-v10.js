@@ -252,37 +252,72 @@
     }
   }
 
-  // Add event listener to the mic button
+ // Add event listener to the mic button
   micButton.addEventListener('click', toggleRecording);
 
-  // Make the mic button movable and update positions of status, transcript, intent, and recording GIF divs
-  micButton.addEventListener('dragstart', function(event) {
-    event.dataTransfer.setData('text/plain', null);
-    var style = window.getComputedStyle(event.target, null);
-    var str = (parseInt(style.getPropertyValue('left'), 10) - event.clientX) + ',' + (parseInt(style.getPropertyValue('top'), 10) - event.clientY);
-    event.dataTransfer.setData("Text", str);
-  });
-
-  document.body.addEventListener('dragover', function(event) {
+  // Add drag functionality for mouse events
+  micButton.addEventListener('mousedown', function(event) {
     event.preventDefault();
-    return false;
+    let shiftX = event.clientX - micButton.getBoundingClientRect().left;
+    let shiftY = event.clientY - micButton.getBoundingClientRect().top;
+
+    function moveAt(pageX, pageY) {
+      micButton.style.left = pageX - shiftX + 'px';
+      micButton.style.top = pageY - shiftY + 'px';
+      updatePosition();
+    }
+
+    function onMouseMove(event) {
+      moveAt(event.pageX, event.pageY);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+
+    micButton.onmouseup = function() {
+      document.removeEventListener('mousemove', onMouseMove);
+      micButton.onmouseup = null;
+    };
   });
 
-  document.body.addEventListener('drop', function(event) {
-    var offset = event.dataTransfer.getData("Text").split(',');
-    micButton.style.left = (event.clientX + parseInt(offset[0], 10)) + 'px';
-    micButton.style.top = (event.clientY + parseInt(offset[1], 10)) + 'px';
+  micButton.ondragstart = function() {
+    return false;
+  };
+
+  // Add drag functionality for touch events
+  micButton.addEventListener('touchstart', function(event) {
+    event.preventDefault();
+    let shiftX = event.touches[0].clientX - micButton.getBoundingClientRect().left;
+    let shiftY = event.touches[0].clientY - micButton.getBoundingClientRect().top;
+
+    function moveAt(pageX, pageY) {
+      micButton.style.left = pageX - shiftX + 'px';
+      micButton.style.top = pageY - shiftY + 'px';
+      updatePosition();
+    }
+
+    function onTouchMove(event) {
+      moveAt(event.touches[0].pageX, event.touches[0].pageY);
+    }
+
+    document.addEventListener('touchmove', onTouchMove);
+
+    micButton.ontouchend = function() {
+      document.removeEventListener('touchmove', onTouchMove);
+      micButton.ontouchend = null;
+    };
+  });
+
+  function updatePosition() {
+    // Update the position of other elements if needed
     statusDiv.style.left = micButton.style.left;
-    statusDiv.style.top = (parseInt(micButton.style.top, 10) + 80) + 'px';
+    statusDiv.style.top = (parseInt(micButton.style.top) + 80) + 'px';
     transcriptDiv.style.left = micButton.style.left;
-    transcriptDiv.style.top = (parseInt(statusDiv.style.top, 10) + 60) + 'px';
+    transcriptDiv.style.top = (parseInt(statusDiv.style.top) + 60) + 'px';
     intentDiv.style.left = micButton.style.left;
-    intentDiv.style.top = (parseInt(transcriptDiv.style.top, 10) + 220) + 'px';
+    intentDiv.style.top = (parseInt(transcriptDiv.style.top) + 220) + 'px';
     recordingGifDiv.style.left = statusDiv.style.left;
-    recordingGifDiv.style.top = (parseInt(statusDiv.style.top, 10) + 30) + 'px';
-    event.preventDefault();
-    return false;
-  });
+    recordingGifDiv.style.top = (parseInt(statusDiv.style.top) + 30) + 'px';
+  }
 
   // Display stored intent on page load
   // displayStoredIntent();
