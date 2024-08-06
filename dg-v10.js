@@ -185,8 +185,10 @@
 
     try {
       // Intent
-      const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Summarize and Identify the intent of the following conversation occurring in a Verizon store between sales rep and customer. Ensure any misheard words are corrected, specifically changing "Rosmi store" or similar misinterpretations to "Verizon store". Include the device names and other entities mentioned in the conversation');
-      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', intent, apiKey, 'Identify the manufacturer name of the device if the customer wants to buy or upgrade a phone. For example, if the customer mentions upgrading to an iPhone, the output should be 'Apple'. Use the following list of manufacturers: Apple, Samsung, Nokia. Only provide the manufacturer's name as the output.');
+      const intentPrompt = 'Summarize and Identify the intent of the following conversation occurring in a Verizon store between sales rep and customer. Ensure any misheard words are corrected, specifically changing "Rosmi store" or similar misinterpretations to "Verizon store". Include the device names and other entities mentioned in the conversation';
+      const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey,intentPrompt );
+      const devicePrompt ='Identify the manufacturer name of the device if the customer wants to buy or upgrade a phone. For example, if the customer mentions upgrading to an iPhone, the output should be "Apple". Use the following list of manufacturers: Apple, Samsung, Nokia. Only provide the manufacturer's name as the output.';
+      const devicename = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', intent, apiKey, devicePrompt);
       const protectionplan = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the features requested by the customer (e.g., Device protection plan, Travel pass).Output only one of this value if present.');
       return {
         intent,
