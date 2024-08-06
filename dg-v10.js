@@ -14,7 +14,7 @@
   var micButton = document.createElement('button');
   micButton.id = 'micButton';
   micButton.innerHTML = '🎤';
-  micButton.style = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999; background-color: white; color: black; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
+  micButton.style = 'position: fixed; top: 20px; right: 80px; z-index: 9999; background-color: white; color: black; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer;';
   micButton.draggable = true;
   document.body.appendChild(micButton);
 
