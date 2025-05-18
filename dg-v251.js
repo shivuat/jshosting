@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audio Transcription and Analysis</title>
+</head>
+<body>
+<script>
 (async function() {
   // Create and style the controls div
   var controlsDiv = document.createElement('div');
@@ -154,7 +161,7 @@
         return;
       }
 
-      // Call OpenAI API to get summarization and intent
+      // Call OpenAI API to get summarization, intent, and interests
       const analysisResults = await callOpenAiAPI(fullTranscript, apiKey);
 
       // Display results
@@ -179,10 +186,13 @@
       const summary = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Summarize the following conversation:');
       // Intent
       const intent = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'Identify the intent of the following conversation:');
-      
+      // Interests
+      const interests = await callOpenAiEndpoint('https://api.openai.com/v1/chat/completions', transcript, apiKey, 'List all products or features the customer shows interest in during the following conversation (e.g., iPhone 16, Price plan, Total Mobile Protection, Netflix). Provide the list in a comma-separated format:');
+
       return {
         summary,
-        intent
+        intent,
+        interests
       };
     } catch (error) {
       console.error('Error during OpenAI API calls:', error);
@@ -242,6 +252,11 @@
       intentContent.textContent = `Intent: ${analysis.intent}`;
       intentContent.className = 'intent';
       resultsBox.appendChild(intentContent);
+
+      const interestsContent = document.createElement('p');
+      interestsContent.textContent = `Shows Interests on: ${analysis.interests}`;
+      interestsContent.className = 'interests';
+      resultsBox.appendChild(interestsContent);
     }
 
     resultsDiv.appendChild(resultsBox);
@@ -251,7 +266,7 @@
   startButton.addEventListener('click', startRecording);
   stopButton.addEventListener('click', stopRecording);
 
-  // Adding styles for summary and intent
+  // Adding styles for summary, intent, and interests
   const style = document.createElement('style');
   style.innerHTML = `
     .summary {
@@ -261,6 +276,11 @@
     }
     .intent {
       background-color: #fff3e0;
+      padding: 5px;
+      border-radius: 5px;
+    }
+    .interests {
+      background-color: #e6ffe6;
       padding: 5px;
       border-radius: 5px;
     }
@@ -301,3 +321,6 @@
     canvasContext.stroke();
   }
 })();
+</script>
+</body>
+</html>
