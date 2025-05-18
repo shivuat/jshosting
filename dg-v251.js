@@ -1,10 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Audio Transcription and Analysis</title>
-</head>
-<body>
-<script>
 (async function() {
   // Create and style the controls div
   var controlsDiv = document.createElement('div');
@@ -321,6 +314,3 @@
     canvasContext.stroke();
   }
 })();
-</script>
-</body>
-</html>
